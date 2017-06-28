@@ -1,4 +1,4 @@
-package io.armee
+package io.armee.messages
 
 object LoadControllerMessages {
   case object AddScheduler

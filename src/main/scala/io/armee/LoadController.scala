@@ -1,6 +1,6 @@
 package io.armee
 
-import io.armee.LoadControllerMessages._
+import io.armee.messages.LoadControllerMessages._
 import akka.actor.{Actor, ActorLogging, Address}
 import akka.cluster.Cluster
 import akka.cluster.ClusterEvent._
@@ -10,7 +10,7 @@ import scala.collection.immutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
-class LoadController(akkaPort: Int, seedPort: Option[Int]) extends Actor with ActorLogging {
+class LoadController(seedPort: Option[Int]) extends Actor with ActorLogging {
 
   val cluster = Cluster(context.system)
   var router = Router(BroadcastRoutingLogic(), Vector[ActorRefRoutee]())
@@ -28,9 +28,7 @@ class LoadController(akkaPort: Int, seedPort: Option[Int]) extends Actor with Ac
     cluster.subscribe(self, initialStateMode = InitialStateAsEvents,
       classOf[MemberEvent], classOf[UnreachableMember])
 
-      //remoteActor.foreach(_ ! AddScheduler)
-
-    seedPort.filter(_ == akkaPort).foreach { _ =>
+    seedPort.foreach { _ =>
       context.system.scheduler.schedule(FiniteDuration(20, SECONDS), FiniteDuration(20, SECONDS)) {
         router.route(BroadcastedMessage, self)
       }
@@ -38,7 +36,6 @@ class LoadController(akkaPort: Int, seedPort: Option[Int]) extends Actor with Ac
   }
 
   override def postStop(): Unit = {
-    //remoteActor.foreach(_ ! RemoveScheduler)
     cluster.unsubscribe(self)
   }
 
