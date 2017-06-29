@@ -19,7 +19,7 @@ class EventGenerator() extends Actor with ActorLogging{
   }
 
   def receive = {
-    case MonitorRequests() => sender ! MonitorRequestsReply(numRequests,numFailures)  //Put in top to give it prio (otherwise it will be lost)
+    case MonitorRequests() => sender ! MonitorRequestsReply(numRequests,numFailures,eventRequestQueue.size)  //Put in top to give it prio (otherwise it will be lost)
     case js @ EventRequestEnvelope(jr) =>
       //log.info("Receiving json event request")
 

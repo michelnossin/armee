@@ -1,5 +1,7 @@
 package io.armee.messages
 
+import akka.dispatch.ControlMessage
+
 object EventGeneratorMessages {
   sealed trait EventRequest
   case class JsonEventRequest() extends EventRequest
@@ -7,7 +9,6 @@ object EventGeneratorMessages {
 
   case class EventRequestEnvelope(er: EventRequest)
 
-  case class MonitorRequests()
+  case class MonitorRequests()  extends ControlMessage //gives this message prio
 
 }
-

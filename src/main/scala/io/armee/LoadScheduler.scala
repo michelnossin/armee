@@ -3,7 +3,7 @@ package io.armee
 import akka.actor.{Actor, ActorLogging, Address, Props}
 import akka.cluster.Cluster
 import akka.cluster.ClusterEvent._
-import akka.routing.{ActorRefRoutee, RoundRobinRoutingLogic, Router}
+import akka.routing.{ActorRefRoutee, BroadcastRoutingLogic, RoundRobinRoutingLogic, Router}
 import io.armee.messages.EventGeneratorMessages.{EventRequestEnvelope, JsonEventRequest}
 import io.armee.messages.LoadControllerMessages.{AddScheduler, BroadcastedMessage, RemoveScheduler}
 import io.armee.messages.LoadSchedulerMessages.JsonEvent
@@ -24,13 +24,13 @@ class LoadScheduler(akkaPort: Int, numWorkers: Int,seedPort: Option[Int]) extend
     ActorRefRoutee(r)
   }
   var roundRobinRouter = Router(RoundRobinRoutingLogic(), routees)
+  var broadCastRouter = Router(BroadcastRoutingLogic(), routees)
+
+  //val myPriorityActor = system.actorOf(Props[MyPriorityActor].withDispatcher("prio-dispatcher"))
 
   //Lets add 1 monitor for each scheduler
   val uid = java.util.UUID.randomUUID.toString
   val monitor = context.system.actorOf(Props(new LoadMonitor(akkaPort)), "loadmonitor_" + self.path.name + "_" + uid)
-
-  //val address = Address("akka.tcp", "armee", "127.0.0.1", 1337)
-  //val test = context.actorSelection(address.toString + "/user/loadcontroller")
 
   //Tell master to add new scheduler to akka cluster so the master can communicate with this worker node
   val remoteActor = seedPort map {
@@ -47,10 +47,10 @@ class LoadScheduler(akkaPort: Int, numWorkers: Int,seedPort: Option[Int]) extend
     cluster.subscribe(self, initialStateMode = InitialStateAsEvents,
       classOf[MemberEvent], classOf[UnreachableMember])
 
-    context.system.scheduler.schedule(FiniteDuration(5, SECONDS), FiniteDuration(1000, MICROSECONDS)) {
-      roundRobinRouter.route(EventRequestEnvelope(JsonEventRequest()), self)
+    context.system.scheduler.schedule(FiniteDuration(1, SECONDS), FiniteDuration(1, MICROSECONDS)) {
+      //roundRobinRouter.route(EventRequestEnvelope(JsonEventRequest()), self)
+      broadCastRouter.route(EventRequestEnvelope(JsonEventRequest()), self)
     }
-
   }
 
   override def postStop(): Unit = {
@@ -61,8 +61,6 @@ class LoadScheduler(akkaPort: Int, numWorkers: Int,seedPort: Option[Int]) extend
   def receive = {
     case BroadcastedMessage =>
       log.info("Received a broadcasted Message")
-    //case JsonEvent(event) =>
-    //  log.info("Received event: " + event)
     case _: MemberEvent => // ignore
   }
 }
