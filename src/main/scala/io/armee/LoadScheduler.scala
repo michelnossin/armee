@@ -7,15 +7,20 @@ import akka.routing.{ActorRefRoutee, BroadcastRoutingLogic, Router}
 import io.armee.messages.EventGeneratorMessages.JsonEventRequest
 import io.armee.messages.LoadControllerMessages.{AddScheduler, BroadcastedMessage, RemoveScheduler}
 import io.armee.messages.LoadSchedulerMessages.JsonEvent
+
 import scala.concurrent.ExecutionContext.Implicits.global
-
 import scala.collection.immutable
-import scala.concurrent.duration.{FiniteDuration, SECONDS}
+import scala.concurrent.duration.{FiniteDuration, SECONDS,MICROSECONDS}
 
-class LoadScheduler(akkaPort: Int, seedPort: Option[Int]) extends Actor with ActorLogging {
+class LoadScheduler(akkaPort: Int, numWorkers: Int,seedPort: Option[Int]) extends Actor with ActorLogging {
 
   val cluster = Cluster(context.system)
   var router = Router(BroadcastRoutingLogic(), Vector[ActorRefRoutee]())
+
+  val eventGenerators = for (worker <- 0 until numWorkers) yield {
+    println("Starting executor " + worker + " on worker: " + self.path.name)
+    context.system.actorOf(Props(new EventGenerator("json")), "eventgenerator_" + self.path.name + "_" + worker)
+  }
 
   //Tell master to add new worker to the cluster
   val remoteActor = seedPort map {
@@ -30,9 +35,8 @@ class LoadScheduler(akkaPort: Int, seedPort: Option[Int]) extends Actor with Act
     cluster.subscribe(self, initialStateMode = InitialStateAsEvents,
       classOf[MemberEvent], classOf[UnreachableMember])
 
-    val eventGenerator = context.system.actorOf(Props(new EventGenerator("json")), "eventgenerator_" + self.path.name)
-    context.system.scheduler.schedule(FiniteDuration(5, SECONDS), FiniteDuration(5, SECONDS)) {
-      eventGenerator ! JsonEventRequest
+    context.system.scheduler.schedule(FiniteDuration(5, SECONDS), FiniteDuration(10000, MICROSECONDS)) {
+      eventGenerators.foreach(gen => gen ! JsonEventRequest)
     }
   }
 
