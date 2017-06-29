@@ -1,9 +1,13 @@
 package io.armee.messages
 
-/**
-  * Created by michelnossin on 28-06-17.
-  */
 object EventGeneratorMessages {
-  case object JsonEventRequest
+  sealed trait EventRequest
+  case class JsonEventRequest() extends EventRequest
+  case class XmlEventRequest() extends EventRequest
+
+  case class EventRequestEnvelope(er: EventRequest)
+
+  case class MonitorRequests()
+
 }
 
