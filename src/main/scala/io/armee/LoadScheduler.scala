@@ -29,9 +29,10 @@ class LoadScheduler(akkaPort: Int, numSlaves: Int,seedPort: Option[Int]) extends
 
   //val myPriorityActor = system.actorOf(Props[MyPriorityActor].withDispatcher("prio-dispatcher"))
 
-  //Lets add 1 monitor for each scheduler
+  //Lets add 1 monitor for each scheduler and one output filewriter
   val uid = java.util.UUID.randomUUID.toString
-  val monitor = context.system.actorOf(Props(new LoadMonitor(akkaPort)), "loadmonitor_" + self.path.name + "_" + uid)
+  val monitor = context.system.actorOf(Props(new LoadMonitor(akkaPort,seedPort)), "loadmonitor_" + self.path.name + "_" + uid)
+  val fileWriter = context.system.actorOf(Props(new FileWriter(akkaPort,"/tmp/armee/" + self.path.name + ".json")), "filewriter_" + self.path.name + "_" + uid)
 
   //Tell master to add new scheduler to akka cluster so the master can communicate with this worker node
   val remoteActor = seedPort map {
@@ -51,7 +52,7 @@ class LoadScheduler(akkaPort: Int, numSlaves: Int,seedPort: Option[Int]) extends
 
     context.system.scheduler.schedule(FiniteDuration(1, SECONDS), FiniteDuration(10, NANOSECONDS)) {
       //roundRobinRouter.route(EventRequestEnvelope(JsonEventRequest()), self)
-      broadCastRouter.route(EventRequestEnvelope(JsonEventRequest()), self)
+      broadCastRouter.route(EventRequestEnvelope(JsonEventRequest(fileWriter)), self)
     }
   }
 

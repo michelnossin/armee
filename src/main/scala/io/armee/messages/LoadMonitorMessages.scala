@@ -5,4 +5,5 @@ package io.armee.messages
   */
 object LoadMonitorMessages {
   case class MonitorRequestsReply(num: Int,lost: Int,queueSize : Int)
+  case class ControllerMonitorRequest()
 }

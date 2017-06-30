@@ -5,11 +5,15 @@ import akka.actor.{Actor, ActorLogging, Address}
 import akka.cluster.Cluster
 import akka.cluster.ClusterEvent._
 import akka.routing.{ActorRefRoutee, BroadcastRoutingLogic, Router}
+import io.armee.messages.LoadMonitorMessages.ControllerMonitorRequest
+
 import scala.collection.immutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
 class LoadController(seedPort: Option[Int]) extends Actor with ActorLogging {
+
+  var sumTotalRequests,sumTotalFailures = 0
 
   val cluster = Cluster(context.system)
   var router = Router(BroadcastRoutingLogic(), Vector[ActorRefRoutee]())
@@ -28,8 +32,13 @@ class LoadController(seedPort: Option[Int]) extends Actor with ActorLogging {
       classOf[MemberEvent], classOf[UnreachableMember])
 
     seedPort.foreach { _ =>
-      context.system.scheduler.schedule(FiniteDuration(20, SECONDS), FiniteDuration(20, SECONDS)) {
-        router.route(BroadcastedMessage, self)
+      context.system.scheduler.schedule(FiniteDuration(1, SECONDS), FiniteDuration(5, SECONDS)) {
+        router.route(ControllerMonitorRequest(), self)
+      }
+      context.system.scheduler.schedule(FiniteDuration(1, SECONDS), FiniteDuration(5, SECONDS)) {
+        println("Msg/s (average 5 secs): " + sumTotalRequests + ",failures: " + sumTotalFailures)
+        sumTotalFailures = 0
+        sumTotalRequests = 0
       }
     }
   }
@@ -55,6 +64,9 @@ class LoadController(seedPort: Option[Int]) extends Actor with ActorLogging {
       router = router.removeRoutee(sender())
     case BroadcastedMessage =>
       log.info("Received a broadcasted Message")
+    case ControllerMonitorRequestReply(totalRequestRate,totalFailureRate) =>
+      sumTotalRequests = sumTotalRequests + totalRequestRate
+      sumTotalFailures = sumTotalFailures + totalFailureRate
     case _: MemberEvent => // ignore
   }
 }
