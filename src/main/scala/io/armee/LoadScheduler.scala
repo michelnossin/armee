@@ -10,14 +10,15 @@ import io.armee.messages.LoadSchedulerMessages.JsonEvent
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.collection.immutable
-import scala.concurrent.duration.{FiniteDuration, MICROSECONDS, SECONDS}
+import scala.concurrent.duration.{FiniteDuration, MICROSECONDS, SECONDS,NANOSECONDS}
 
-class LoadScheduler(akkaPort: Int, numWorkers: Int,seedPort: Option[Int]) extends Actor with ActorLogging {
+class LoadScheduler(akkaPort: Int, numSlaves: Int,seedPort: Option[Int]) extends Actor with ActorLogging {
 
+  print("Executor starting up with port: " + akkaPort)
   val cluster = Cluster(context.system)
 
   //Define roundrobin router for the scheduler so it can reach the event generating executors
-  val routees = Vector.fill(numWorkers) {
+  val routees = Vector.fill(numSlaves) {
     val uid = java.util.UUID.randomUUID.toString
     val r = context.system.actorOf(Props(new EventGenerator()), "eventgenerator_" + self.path.name + "_" + uid)
     context watch r
@@ -47,7 +48,8 @@ class LoadScheduler(akkaPort: Int, numWorkers: Int,seedPort: Option[Int]) extend
     cluster.subscribe(self, initialStateMode = InitialStateAsEvents,
       classOf[MemberEvent], classOf[UnreachableMember])
 
-    context.system.scheduler.schedule(FiniteDuration(1, SECONDS), FiniteDuration(1, MICROSECONDS)) {
+
+    context.system.scheduler.schedule(FiniteDuration(1, SECONDS), FiniteDuration(10, NANOSECONDS)) {
       //roundRobinRouter.route(EventRequestEnvelope(JsonEventRequest()), self)
       broadCastRouter.route(EventRequestEnvelope(JsonEventRequest()), self)
     }

@@ -11,8 +11,7 @@ import scala.concurrent.duration.{FiniteDuration, MICROSECONDS, SECONDS}
 class LoadMonitor(port : Int) extends Actor with ActorLogging {
 
   val cluster = Cluster(context.system)
-  var numTotalRequests,oldTotalRequests = 0
-  var numTotalFailures , oldTotalFailures = 0
+  var deltaTotalRequests,deltaTotalFailures = 0
 
   //Start send events to executors when starting
   override def preStart(): Unit = {
@@ -23,13 +22,11 @@ class LoadMonitor(port : Int) extends Actor with ActorLogging {
       eventGenerators ! MonitorRequests()
     }
     context.system.scheduler.schedule(FiniteDuration(1, SECONDS), FiniteDuration(5, SECONDS)) {
-      val diffRequests = (numTotalRequests - oldTotalRequests)/5
-      val diffFailures = (numTotalFailures - oldTotalFailures)/5
+      val diffRequests = (deltaTotalRequests)/5
+      val diffFailures = (deltaTotalFailures)/5
       println("Msg per sec (avg last 5 sec):" + diffRequests + " , failed: " + diffFailures)
-      oldTotalRequests = numTotalRequests
-      oldTotalFailures = numTotalFailures
-      numTotalRequests = 0
-      numTotalFailures = 0
+      deltaTotalRequests = 0
+      deltaTotalFailures = 0
     }
   }
 
@@ -38,8 +35,8 @@ class LoadMonitor(port : Int) extends Actor with ActorLogging {
 
       //log.info("Actor: " + sender + " got " + num + " requests.")
       //println("Actor: " + sender + " got " + num + " requests. Lost: " + lost + " . Queuesize: " + queueSize)
-      numTotalRequests = numTotalRequests + num
-      numTotalFailures = numTotalFailures + lost
+      deltaTotalRequests = deltaTotalRequests + num
+      deltaTotalFailures = deltaTotalFailures + lost
     case _: MemberEvent => // ignore
   }
 }
