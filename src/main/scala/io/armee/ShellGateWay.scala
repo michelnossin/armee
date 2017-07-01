@@ -3,8 +3,9 @@ package io.armee
 import akka.actor.{Actor, ActorLogging, Address}
 import akka.cluster.Cluster
 import akka.cluster.ClusterEvent.MemberEvent
-import io.armee.messages.LoadControllerMessages.BroadcastedMessage
+import io.armee.messages.LoadControllerMessages.{BroadcastedMessage, SoldiersMetrics}
 import io.armee.messages.LoadSchedulerMessages.SendSoldiers
+import io.armee.messages.ShellGateWayMessages.SoldiersMetricsReply
 
 import scala.collection.immutable
 
@@ -20,6 +21,10 @@ class ShellGateWay (shellPort: Int, masterPort: Int) extends Actor with ActorLog
       //println("User commands soldiers to initiate battle testing. Per executor: " + num)
       master ! SendSoldiers(num)
     }
+    case SoldiersMetricsReply(msgPerSecond,failuresperSecond) => {
+      println("Msg/s (average 5 secs): " + msgPerSecond + ",failures: " + failuresperSecond)
+    }
+    case SoldiersMetrics() => master ! SoldiersMetrics()
     case _: MemberEvent => // ignore
   }
 }

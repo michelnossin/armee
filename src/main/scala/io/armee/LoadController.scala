@@ -7,6 +7,7 @@ import akka.cluster.ClusterEvent._
 import akka.routing.{ActorRefRoutee, BroadcastRoutingLogic, Router}
 import io.armee.messages.LoadMonitorMessages.ControllerMonitorRequest
 import io.armee.messages.LoadSchedulerMessages.SendSoldiers
+import io.armee.messages.ShellGateWayMessages.SoldiersMetricsReply
 
 import scala.collection.immutable
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -39,7 +40,7 @@ class LoadController(seedPort: Option[Int]) extends Actor with ActorLogging {
       }
       //And save the last state of the metrics received by the executor monitors
       context.system.scheduler.schedule(FiniteDuration(1, SECONDS), FiniteDuration(5, SECONDS)) {
-        println("Msg/s (average 5 secs): " + sumTotalRequests + ",failures: " + sumTotalFailures)
+        //println("Msg/s (average 5 secs): " + sumTotalRequests + ",failures: " + sumTotalFailures)
         msgPerSecond = sumTotalRequests
         failuresperSecond = sumTotalFailures
         sumTotalFailures = 0
@@ -76,7 +77,7 @@ class LoadController(seedPort: Option[Int]) extends Actor with ActorLogging {
       println("Master is sending soldiers to executors, total of " + num)
       router.route(SendSoldiers(num), self)
     } //Send to all executors
-    //case SoldiersMetrics() => SoldiersMetricsReply(msgPerSecond,failuresperSecond)
+    case SoldiersMetrics() => sender ! SoldiersMetricsReply(msgPerSecond,failuresperSecond)
     case _: MemberEvent => // ignore
   }
 }

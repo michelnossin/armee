@@ -3,14 +3,16 @@ package io.armee
 import akka.actor.{ActorSystem, Props}
 import akka.actor.ActorRef
 import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
-import io.armee.messages.LoadSchedulerMessages.{SendSoldiers}
+import io.armee.messages.LoadSchedulerMessages.SendSoldiers
+
 import scala.io.StdIn
 import com.typesafe.config._
+import io.armee.messages.LoadControllerMessages.SoldiersMetrics
 
 object Shell extends App{
 
   def showMenu(gw: ActorRef): Unit ={
-    println("1 Send Soldiers to start or change the load [0 - <any number>]")
+    println("1 Send Soldiers to the battlefield to change the load")
     println("2 Monitor load created by soldiers")
     println("3 Exit shell")
     print("Armee shell>")
@@ -26,7 +28,14 @@ object Shell extends App{
           }
         }
       }
-      case "3" => System.exit(1)
+      case "2" => {
+        gw ! SoldiersMetrics()
+        println("")
+        Thread.sleep(200)
+        println("")
+        showMenu(gw)
+      }
+      case "3" => System.exit(0)
     }
   }
   if (args.size > 2) {
