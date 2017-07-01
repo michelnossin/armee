@@ -9,11 +9,11 @@ import io.armee.messages.FileWriterMessages.WriteFileMessage
 
 class FileWriter(port : Int,fileName : String) extends Actor with ActorLogging {
   val cluster = Cluster(context.system)
-  val outputFile = new PrintWriter(new File(fileName ))
+  //val outputFile = new PrintWriter(new File(fileName ))
 
   def receive = {
     case WriteFileMessage(js: String) =>
-      outputFile.write(js)
+      //outputFile.write(js)
     case _: MemberEvent => // ignore
   }
 }

@@ -5,4 +5,5 @@ object LoadControllerMessages {
   case object RemoveScheduler
   case object BroadcastedMessage
   case class ControllerMonitorRequestReply(totalRequestRate:Int,totalFailureRate:Int)
+  case class SoldiersMetrics()
 }

@@ -5,4 +5,5 @@ package io.armee.messages
   */
 object LoadSchedulerMessages {
   case class JsonEvent(event: String)
+  case class SendSoldiers(num: Int)
 }

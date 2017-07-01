@@ -6,6 +6,7 @@ import akka.cluster.Cluster
 import akka.cluster.ClusterEvent._
 import akka.routing.{ActorRefRoutee, BroadcastRoutingLogic, Router}
 import io.armee.messages.LoadMonitorMessages.ControllerMonitorRequest
+import io.armee.messages.LoadSchedulerMessages.SendSoldiers
 
 import scala.collection.immutable
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -13,7 +14,7 @@ import scala.concurrent.duration._
 
 class LoadController(seedPort: Option[Int]) extends Actor with ActorLogging {
 
-  var sumTotalRequests,sumTotalFailures = 0
+  var sumTotalRequests,sumTotalFailures,msgPerSecond,failuresperSecond = 0 //for monitoring
 
   val cluster = Cluster(context.system)
   var router = Router(BroadcastRoutingLogic(), Vector[ActorRefRoutee]())
@@ -32,11 +33,15 @@ class LoadController(seedPort: Option[Int]) extends Actor with ActorLogging {
       classOf[MemberEvent], classOf[UnreachableMember])
 
     seedPort.foreach { _ =>
+      //Each 5 seconds ask the monitor state to all executor monitors
       context.system.scheduler.schedule(FiniteDuration(1, SECONDS), FiniteDuration(5, SECONDS)) {
         router.route(ControllerMonitorRequest(), self)
       }
+      //And save the last state of the metrics received by the executor monitors
       context.system.scheduler.schedule(FiniteDuration(1, SECONDS), FiniteDuration(5, SECONDS)) {
         println("Msg/s (average 5 secs): " + sumTotalRequests + ",failures: " + sumTotalFailures)
+        msgPerSecond = sumTotalRequests
+        failuresperSecond = sumTotalFailures
         sumTotalFailures = 0
         sumTotalRequests = 0
       }
@@ -67,6 +72,11 @@ class LoadController(seedPort: Option[Int]) extends Actor with ActorLogging {
     case ControllerMonitorRequestReply(totalRequestRate,totalFailureRate) =>
       sumTotalRequests = sumTotalRequests + totalRequestRate
       sumTotalFailures = sumTotalFailures + totalFailureRate
+    case SendSoldiers(num) => {
+      println("Master is sending soldiers to executors, total of " + num)
+      router.route(SendSoldiers(num), self)
+    } //Send to all executors
+    //case SoldiersMetrics() => SoldiersMetricsReply(msgPerSecond,failuresperSecond)
     case _: MemberEvent => // ignore
   }
 }

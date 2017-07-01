@@ -3,33 +3,27 @@ package io.armee
 import akka.actor.{Actor, ActorLogging, Address, Props}
 import akka.cluster.Cluster
 import akka.cluster.ClusterEvent._
-import akka.routing.{ActorRefRoutee, BroadcastRoutingLogic, RoundRobinRoutingLogic, Router}
+import akka.routing._
 import io.armee.messages.EventGeneratorMessages.{EventRequestEnvelope, JsonEventRequest}
 import io.armee.messages.LoadControllerMessages.{AddScheduler, BroadcastedMessage, RemoveScheduler}
-import io.armee.messages.LoadSchedulerMessages.JsonEvent
+import io.armee.messages.LoadSchedulerMessages.{JsonEvent, SendSoldiers}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.collection.immutable
-import scala.concurrent.duration.{FiniteDuration, MICROSECONDS, SECONDS,NANOSECONDS}
+import scala.concurrent.duration.{FiniteDuration, MICROSECONDS, NANOSECONDS, SECONDS}
 
-class LoadScheduler(akkaPort: Int, numSlaves: Int,seedPort: Option[Int]) extends Actor with ActorLogging {
+class LoadScheduler(akkaPort: Int, seedPort: Option[Int]) extends Actor with ActorLogging {
+
+  var numSoldiers = 0
 
   print("Executor starting up with port: " + akkaPort)
   val cluster = Cluster(context.system)
 
-  //Define roundrobin router for the scheduler so it can reach the event generating executors
-  val routees = Vector.fill(numSlaves) {
-    val uid = java.util.UUID.randomUUID.toString
-    val r = context.system.actorOf(Props(new EventGenerator()), "eventgenerator_" + self.path.name + "_" + uid)
-    context watch r
-    ActorRefRoutee(r)
-  }
-  var roundRobinRouter = Router(RoundRobinRoutingLogic(), routees)
-  var broadCastRouter = Router(BroadcastRoutingLogic(), routees)
-
-  //val myPriorityActor = system.actorOf(Props[MyPriorityActor].withDispatcher("prio-dispatcher"))
+  var broadCastRouter = Router(BroadcastRoutingLogic())
+  var roundRobinRouter = Router(RoundRobinRoutingLogic())
 
   //Lets add 1 monitor for each scheduler and one output filewriter
+
   val uid = java.util.UUID.randomUUID.toString
   val monitor = context.system.actorOf(Props(new LoadMonitor(akkaPort,seedPort)), "loadmonitor_" + self.path.name + "_" + uid)
   val fileWriter = context.system.actorOf(Props(new FileWriter(akkaPort,"/tmp/armee/" + self.path.name + ".json")), "filewriter_" + self.path.name + "_" + uid)
@@ -49,11 +43,6 @@ class LoadScheduler(akkaPort: Int, numSlaves: Int,seedPort: Option[Int]) extends
     cluster.subscribe(self, initialStateMode = InitialStateAsEvents,
       classOf[MemberEvent], classOf[UnreachableMember])
 
-
-    context.system.scheduler.schedule(FiniteDuration(1, SECONDS), FiniteDuration(10, NANOSECONDS)) {
-      //roundRobinRouter.route(EventRequestEnvelope(JsonEventRequest()), self)
-      broadCastRouter.route(EventRequestEnvelope(JsonEventRequest(fileWriter)), self)
-    }
   }
 
   override def postStop(): Unit = {
@@ -61,7 +50,29 @@ class LoadScheduler(akkaPort: Int, numSlaves: Int,seedPort: Option[Int]) extends
     cluster.unsubscribe(self)
   }
 
+  def sendSoldiers (num: Int): Unit = {
+    numSoldiers = num
+
+    val routees = Vector.fill(numSoldiers) {
+      val uid = java.util.UUID.randomUUID.toString
+      val r = context.system.actorOf(Props(new EventGenerator()), "eventgenerator_" + self.path.name + "_" + uid)
+      context watch r
+      ActorRefRoutee(r)
+    }
+    broadCastRouter = Router(BroadcastRoutingLogic(), routees)
+    roundRobinRouter = Router(RoundRobinRoutingLogic(), routees)
+
+    context.system.scheduler.schedule(FiniteDuration(1, SECONDS), FiniteDuration(10, NANOSECONDS)) {
+      //roundRobinRouter.route(EventRequestEnvelope(JsonEventRequest()), self)
+      broadCastRouter.route(EventRequestEnvelope(JsonEventRequest(fileWriter)), self)
+    }
+  }
+
   def receive = {
+    case SendSoldiers(num) => {
+      println("Executor " + self.path.name + " received soldiers, total of : " + num)
+      sendSoldiers(num)
+    }
     case BroadcastedMessage =>
       log.info("Received a broadcasted Message")
     case _: MemberEvent => // ignore
