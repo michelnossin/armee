@@ -7,6 +7,7 @@ import io.armee.messages.LoadSchedulerMessages.SendSoldiers
 
 import scala.io.StdIn
 import com.typesafe.config._
+import io.armee.config.YamlConfig
 import io.armee.messages.LoadControllerMessages.SoldiersMetrics
 
 object Shell extends App{
@@ -38,52 +39,24 @@ object Shell extends App{
       case "3" => System.exit(0)
     }
   }
-  if (args.size > 2) {
-    println("Welcome to Armee (C) 2017 Michel Nossin. For more information : Armee.io. ")
-    println("")
-    println("Syntax: start_shell.sh [<shell port>] [<master port>] [<masterserver>]")
-    println("")
-    println("Shell port = Port to used by this shell. Default port 1336")
-    println("master port = Port used by the master. Default port used is 1337. Master should be started first")
-    println("masterserver = Servername or ip of master if used on remote server (OPTIONAL)")
-    println("")
-    println("start_shell.sh 1336 1337")
-    println("")
 
-    println("DISCLAIMER: USE AT YOUR OWN RISK")
-    println("")
-    System.exit(1)
-  }
-  else {
     println("Welcome to Armee (C) 2017 Michel Nossin. For more information : Armee.io. ")
     println("Starting shell.... ")
     println("")
     println("DISCLAIMER: USE AT YOUR OWN RISK")
     println("")
-  }
 
-  /*
-  val shellPort = toInt(args(0)) match {
-    case Some(i) => i
-    case None => 1336
-  }
+  val yc = new YamlConfig
+  val e = yc.readConfig()
 
-  val masterPort = toInt(args(1)) match {
-    case Some(i) => i
-    case None => 1337
-  }
-  */
-  val masterPort = args(1).toInt
-  val shellPort = args(0).toInt
 
   val config = ConfigFactory.load()
     .withValue("akka.loglevel", ConfigValueFactory.fromAnyRef("OFF"))
     .withValue("akka.stdout-loglevel", ConfigValueFactory.fromAnyRef("OFF"))
-    .withValue("akka.remote.netty.tcp.port", ConfigValueFactory.fromAnyRef(shellPort))
+    .withValue("akka.remote.netty.tcp.port", ConfigValueFactory.fromAnyRef(e.shellPort))
 
   val system = ActorSystem("armee", config)
-  val shellGateway = system.actorOf(Props(new ShellGateWay(shellPort, masterPort)), "shellgateway_" + shellPort)
+  val shellGateway = system.actorOf(Props(new ShellGateWay(e.shellPort, e.masterPort)), "shellgateway_" + e.shellPort)
 
   showMenu(shellGateway)
-  //shellGateway ! SendSoldiers(20000)
 }
