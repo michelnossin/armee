@@ -6,6 +6,7 @@ sbt assembly
 cp -rp target/scala-2.12/armee-assembly-0.0.1-SNAPSHOT.jar $HOME/armee/armee.jar
 cp -rp src/main/resources/config.yaml $HOME/armee
 cp -rp src/main/scala/io/armee/scripts/* $HOME/armee
+cp LICENSE $HOME/armee
 chmod 700 $HOME/armee/start_master.sh
 chmod 700 $HOME/armee/start_worker.sh
 chmod 700 $HOME/armee/start_shell.sh

@@ -2,5 +2,4 @@ shellPort : 1336
 masterPort : 1335
 workerPort : 1338 #And the next <numExecutorPerServer> ports
 masterServer : "127.0.0.1"
-workerServer : "127.0.0.1"
 numExecutorsPerServer  : 4

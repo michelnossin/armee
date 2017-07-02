@@ -1,3 +1,19 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.armee
 
 import akka.actor.{Actor, ActorLogging, Address, Props}
@@ -7,16 +23,16 @@ import akka.routing._
 import io.armee.messages.EventGeneratorMessages.{EventRequestEnvelope, JsonEventRequest}
 import io.armee.messages.LoadControllerMessages.{AddScheduler, BroadcastedMessage, RemoveScheduler}
 import io.armee.messages.LoadSchedulerMessages.{JsonEvent, SendSoldiers}
-
+import java.net._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.collection.immutable
 import scala.concurrent.duration.{FiniteDuration, MICROSECONDS, NANOSECONDS, SECONDS}
 
-class LoadScheduler(akkaPort: Int, seedPort: Option[Int]) extends Actor with ActorLogging {
+class LoadScheduler(workerHost: String,akkaPort: Int, seedPort: Option[Int], seedHost: String) extends Actor with ActorLogging {
 
   var numSoldiers = 0
 
-  print("Executor starting up with port: " + akkaPort)
+  print("Executor starting up with port: " + akkaPort + " on host " + workerHost)
   val cluster = Cluster(context.system)
 
   var broadCastRouter = Router(BroadcastRoutingLogic())
@@ -31,7 +47,7 @@ class LoadScheduler(akkaPort: Int, seedPort: Option[Int]) extends Actor with Act
   //Tell master to add new scheduler to akka cluster so the master can communicate with this worker node
   val remoteActor = seedPort map {
     port =>
-      val address = Address("akka.tcp", "armee", "127.0.0.1", port)
+      val address = Address("akka.tcp", "armee", seedHost, port)
       cluster.joinSeedNodes(immutable.Seq(address))
 
       context.actorSelection(address.toString + "/user/loadcontroller")

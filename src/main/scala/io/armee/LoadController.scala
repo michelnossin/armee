@@ -1,19 +1,35 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.armee
 
 import io.armee.messages.LoadControllerMessages._
 import akka.actor.{Actor, ActorLogging, Address}
-import akka.cluster.Cluster
+import akka.cluster.{Cluster, MemberStatus}
 import akka.cluster.ClusterEvent._
 import akka.routing.{ActorRefRoutee, BroadcastRoutingLogic, Router}
 import io.armee.messages.LoadMonitorMessages.ControllerMonitorRequest
 import io.armee.messages.LoadSchedulerMessages.SendSoldiers
-import io.armee.messages.ShellGateWayMessages.SoldiersMetricsReply
-
+import io.armee.messages.ShellGateWayMessages.{ClusterStatusReply, SoldiersMetricsReply}
+import scala.util.matching.Regex
 import scala.collection.immutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
-class LoadController(seedPort: Option[Int]) extends Actor with ActorLogging {
+class LoadController(seedPort: Option[Int],seedHost: String) extends Actor with ActorLogging {
 
   var sumTotalRequests,sumTotalFailures,msgPerSecond,failuresperSecond = 0 //for monitoring
 
@@ -23,7 +39,7 @@ class LoadController(seedPort: Option[Int]) extends Actor with ActorLogging {
   //Add this controller to the controller group which acts ass the seed group for this akka cluster
   val remoteActor = seedPort map {
     port =>
-      val address = Address("akka.tcp", "armee", "127.0.0.1", port)
+      val address = Address("akka.tcp", "armee", seedHost, port)
       cluster.joinSeedNodes(immutable.Seq(address))
 
       context.actorSelection(address.toString + "/user/loadcontroller")
@@ -78,6 +94,20 @@ class LoadController(seedPort: Option[Int]) extends Actor with ActorLogging {
       router.route(SendSoldiers(num), self)
     } //Send to all executors
     case SoldiersMetrics() => sender ! SoldiersMetricsReply(msgPerSecond,failuresperSecond)
+    case ClusterStatus() => {
+      val members = cluster.state.members
+      val pattern = """([a-z:\/.]*)@([0-9.]*):([0-9]*)$""".r
+      val status = members.collect {
+        case member =>
+          val address = member.address.toString
+          val matched = pattern.findFirstMatchIn(address)
+
+          matched match {
+            case  Some(m) => (m.group(2).toString, m.group(3).toInt , member.status.toString)
+        }
+      }
+      sender ! ClusterStatusReply(status)
+    }
     case _: MemberEvent => // ignore
   }
 }
