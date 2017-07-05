@@ -21,17 +21,21 @@ import akka.actor.{Actor, ActorLogging, Address}
 import akka.cluster.{Cluster, MemberStatus}
 import akka.cluster.ClusterEvent._
 import akka.routing.{ActorRefRoutee, BroadcastRoutingLogic, Router}
+import io.armee.config.YamlConfig
 import io.armee.messages.LoadMonitorMessages.ControllerMonitorRequest
 import io.armee.messages.LoadSchedulerMessages.SendSoldiers
 import io.armee.messages.ShellGateWayMessages.{ClusterStatusReply, SoldiersMetricsReply}
+
 import scala.util.matching.Regex
 import scala.collection.immutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
-class LoadController(seedPort: Option[Int],seedHost: String) extends Actor with ActorLogging {
+class LoadController(seedPort: Option[Int],seedHost: String,yamlConfig : YamlConfig) extends Actor with ActorLogging {
 
   var sumTotalRequests,sumTotalFailures,msgPerSecond,failuresperSecond = 0 //for monitoring
+  val configuredMasterPort : Int = yamlConfig.masterPort
+  val configuredShellPort : Int = yamlConfig.shellPort
 
   val cluster = Cluster(context.system)
   var router = Router(BroadcastRoutingLogic(), Vector[ActorRefRoutee]())
@@ -95,18 +99,37 @@ class LoadController(seedPort: Option[Int],seedHost: String) extends Actor with 
     } //Send to all executors
     case SoldiersMetrics() => sender ! SoldiersMetricsReply(msgPerSecond,failuresperSecond)
     case ClusterStatus() => {
+      println("Cluster status requested at Controller")
       val members = cluster.state.members
       val pattern = """([a-z:\/.]*)@([0-9.]*):([0-9]*)$""".r
+
       val status = members.collect {
-        case member =>
+
+        case member  =>
           val address = member.address.toString
           val matched = pattern.findFirstMatchIn(address)
 
+
           matched match {
-            case  Some(m) => (m.group(2).toString, m.group(3).toInt , member.status.toString)
+            //val agentType = "WORKER"
+
+            case  Some(m) => {
+              val agentType = m.group(3).toInt match {
+                case `configuredMasterPort` => "Master"
+                case `configuredShellPort` => "Shell"
+                case _ => "Worker"
+
+              }
+              AgentStatus(m.group(2).toString,m.group(3).toInt,agentType,member.status.toString)
+            }
+            //(m.group(2).toString, m.group(3).toInt , member.status.toString)
+            //case None => AgentStatus("dfsf",1234,"HALO","UP")
         }
       }
-      sender ! ClusterStatusReply(status)
+      val cs = new NamedList[AgentStatus](name = "clusterstatus", items = status.toList)
+      sender ! ClusterStatusReply(cs)
+
+
     }
     case _: MemberEvent => // ignore
   }

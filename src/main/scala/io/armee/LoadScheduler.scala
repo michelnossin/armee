@@ -16,14 +16,13 @@
  */
 package io.armee
 
-import akka.actor.{Actor, ActorLogging, Address, Props}
+import akka.actor.{Actor, ActorLogging, Address, Props,ActorRef}
 import akka.cluster.Cluster
 import akka.cluster.ClusterEvent._
 import akka.routing._
 import io.armee.messages.EventGeneratorMessages.{EventRequestEnvelope, JsonEventRequest}
 import io.armee.messages.LoadControllerMessages.{AddScheduler, BroadcastedMessage, RemoveScheduler}
 import io.armee.messages.LoadSchedulerMessages.{JsonEvent, SendSoldiers}
-import java.net._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.collection.immutable
 import scala.concurrent.duration.{FiniteDuration, MICROSECONDS, NANOSECONDS, SECONDS}
@@ -38,11 +37,8 @@ class LoadScheduler(workerHost: String,akkaPort: Int, seedPort: Option[Int], see
   var broadCastRouter = Router(BroadcastRoutingLogic())
   var roundRobinRouter = Router(RoundRobinRoutingLogic())
 
-  //Lets add 1 monitor for each scheduler and one output filewriter
-
   val uid = java.util.UUID.randomUUID.toString
   val monitor = context.system.actorOf(Props(new LoadMonitor(akkaPort,seedPort)), "loadmonitor_" + self.path.name + "_" + uid)
-  val fileWriter = context.system.actorOf(Props(new FileWriter(akkaPort,"/tmp/armee/" + self.path.name + ".json")), "filewriter_" + self.path.name + "_" + uid)
 
   //Tell master to add new scheduler to akka cluster so the master can communicate with this worker node
   val remoteActor = seedPort map {
@@ -80,7 +76,7 @@ class LoadScheduler(workerHost: String,akkaPort: Int, seedPort: Option[Int], see
 
     context.system.scheduler.schedule(FiniteDuration(1, SECONDS), FiniteDuration(10, NANOSECONDS)) {
       //roundRobinRouter.route(EventRequestEnvelope(JsonEventRequest()), self)
-      broadCastRouter.route(EventRequestEnvelope(JsonEventRequest(fileWriter)), self)
+      broadCastRouter.route(EventRequestEnvelope(JsonEventRequest()), self)
     }
   }
 

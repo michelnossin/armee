@@ -27,11 +27,15 @@ import io.armee.messages.LoadControllerMessages.{ClusterStatus, SoldiersMetrics}
 
 object Shell extends App{
 
+  var inputType = "simple json"
+  var outputType = "nowhere"
+
   def showMenu(gw: ActorRef): Unit ={
     println("0 Get cluster status")
-    println("1 Send Soldiers to the battlefield to change the load")
-    println("2 Monitor load created by soldiers")
-    println("3 Exit shell")
+    println("1 Select load settings, current [input: " + inputType + ", output: " + outputType)
+    println("2 Send Soldiers to the battlefield to change the load")
+    println("3 Monitor load created by soldiers")
+    println("4 Exit shell")
     print("Armee shell>")
     StdIn.readLine() match {
       case "0" => {
@@ -42,6 +46,20 @@ object Shell extends App{
         showMenu(gw)
       }
       case "1" => {
+        println("Input cant be changed at this moment.")
+        println("Change output to ['nowhere' or 'file']: ")
+        StdIn.readLine() match {
+          case line @ "nowhere" => {
+            outputType = line
+            //gw ! ChangeOutputType(line)
+            println("Done")
+          }
+          case _ => println("Wrong answer B:(")
+        }
+        println("")
+        showMenu(gw)
+      }
+      case "2" => {
         print("How many soldiers: ")
         StdIn.readLine() match {
           case num => {
@@ -52,22 +70,27 @@ object Shell extends App{
           }
         }
       }
-      case "2" => {
+      case "3" => {
         gw ! SoldiersMetrics()
         println("")
         Thread.sleep(200)
         println("")
         showMenu(gw)
       }
-      case "3" => System.exit(0)
+      case "4" => System.exit(0)
+      case _ => {
+        println("Wrong answer B:(")
+        println("")
+        showMenu(gw)
+      }
     }
   }
 
-    println("Welcome to Armee (C) 2017 Michel Nossin. For more information : Armee.io. ")
-    println("Starting shell.... ")
-    println("")
-    println("DISCLAIMER: USE AT YOUR OWN RISK")
-    println("")
+  println("Welcome to Armee (C) 2017 Michel Nossin. For more information : Armee.io. ")
+  println("Starting shell.... ")
+  println("")
+  println("DISCLAIMER: USE AT YOUR OWN RISK")
+  println("")
 
   val yc = new YamlConfig
   val e = yc.readConfig()

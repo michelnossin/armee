@@ -14,3 +14,7 @@ libraryDependencies ++= Seq(
 )
 
 libraryDependencies ++= Seq("org.yaml" % "snakeyaml" % "1.16")
+
+libraryDependencies += "com.typesafe.akka" % "akka-http_2.12" % "10.0.5"
+
+libraryDependencies += "io.spray" %%  "spray-json" % "1.3.3"

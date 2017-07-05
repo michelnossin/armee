@@ -51,9 +51,9 @@ class EventGenerator() extends Actor with ActorLogging{
       //if (eventRequestQueue.isEmpty) {
       if (eventRequestQueue.size < 1000) {
         jr match {
-          case JsonEventRequest(replyTo) => {
+          case JsonEventRequest() => {
             eventRequestQueue :+= jr
-            generateJson(replyTo)
+            generateJson(self) //TODO: SOME OUTPUT ACTOR  
           }
           case _ => // ignore
         }

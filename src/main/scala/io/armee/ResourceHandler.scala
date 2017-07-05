@@ -14,11 +14,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.armee.messages
+package io.armee
 
-import io.armee.messages.LoadControllerMessages.{AgentStatus, NamedList}
+import akka.actor.{Actor, ActorLogging}
+import akka.cluster.ClusterEvent.MemberEvent
+import io.armee.messages.EventGeneratorMessages.EventRequest
+import io.armee.messages.LoadControllerMessages.BroadcastedMessage
 
-object ShellGateWayMessages {
-  case class SoldiersMetricsReply(msgPerSecond : Int,failuresperSecond: Int)
-  case class ClusterStatusReply(status : NamedList[AgentStatus])
+import scala.collection.immutable.Queue
+
+
+class ResourceHandler(executorPort: Int) extends Actor with ActorLogging {
+  var eventRequestQueue = Queue.empty[String]
+  var numRequests,numFailures = 0
+
+  def receive = {
+    case BroadcastedMessage =>
+      log.info("Received a broadcasted Message")
+    case _: MemberEvent => // ignore
+  }
 }

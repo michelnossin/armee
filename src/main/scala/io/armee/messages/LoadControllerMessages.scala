@@ -16,11 +16,40 @@
  */
 package io.armee.messages
 
+import spray.json.{DefaultJsonProtocol, JsonFormat}
+import spray.json._
+import DefaultJsonProtocol._
+import sun.management.resources.agent
+
 object LoadControllerMessages {
+
   case object AddScheduler
+
   case object RemoveScheduler
+
   case object BroadcastedMessage
-  case class ControllerMonitorRequestReply(totalRequestRate:Int,totalFailureRate:Int)
+
+  case class ControllerMonitorRequestReply(totalRequestRate: Int, totalFailureRate: Int)
+
   case class SoldiersMetrics()
+
   case class ClusterStatus()
+
+  case class AgentStatus(host: String, port: Int, agentType: String, state: String)
+  case class NamedList[A](name: String, items: List[A])
+
+  trait OrderJsonSupport extends DefaultJsonProtocol {
+    implicit val agentWriter: JsonWriter[AgentStatus] = {
+      new JsonWriter[AgentStatus] {
+        def write(agentStatus: AgentStatus): JsValue =
+          JsObject(List(
+            "host" -> agentStatus.host.toJson,
+            "port" -> agentStatus.port.toJson,
+            "type" -> agentStatus.agentType.toJson,
+            "state" -> agentStatus.state.toJson
+
+          ))
+      }
+    }
+  }
 }

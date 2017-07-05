@@ -42,12 +42,12 @@ class ShellGateWay (shellPort: Int, masterPort: Int,masterServer: String) extend
     }
     case SoldiersMetrics() => master ! SoldiersMetrics()
     case ClusterStatus() => master ! ClusterStatus()
-    case ClusterStatusReply(clusterStatus) => {
-      for ( (ip,port,status) <- clusterStatus ) {
-        val typePort = if (port == shellPort) "Shell Console" else if (port == masterPort) "Master" else "Worker"
-        println("Executor: " + ip + ":" + port + " (" + typePort + ") , status: " + status)
-      }
-    }
+    //case ClusterStatusReply(clusterStatus) => {
+    //  for ( (ip,port,status) <- clusterStatus ) {
+    //    val typePort = if (port == shellPort) "Shell Console" else if (port == masterPort) "Master" else "Worker"
+    //    println("Executor: " + ip + ":" + port + " (" + typePort + ") , status: " + status)
+    //  }
+    //}
     case _: MemberEvent => // ignore
   }
 }

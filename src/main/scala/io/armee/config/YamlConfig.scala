@@ -11,6 +11,7 @@ class YamlConfig {
   @BeanProperty var shellPort = 1336
   @BeanProperty var masterPort = 1337
   @BeanProperty var workerPort = 1338
+  @BeanProperty var apiPort = 1335
   @BeanProperty var masterServer = "127.0.0.1"
   @BeanProperty var numExecutorsPerServer = 4
 
@@ -41,5 +42,5 @@ class YamlConfig {
     e
   }
 
-  override def toString: String = s"executors : $numExecutorsPerServer, shellPort: $shellPort, workerPort: $workerPort, masterPort: $masterPort, masterServer: $masterServer"
+  override def toString: String = s"executors : $numExecutorsPerServer, apiPort: $apiPort, shellPort: $shellPort, workerPort: $workerPort, masterPort: $masterPort, masterServer: $masterServer"
 }
