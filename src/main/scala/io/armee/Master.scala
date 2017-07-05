@@ -34,7 +34,7 @@ import spray.json._
 import DefaultJsonProtocol._
 import scala.concurrent.duration._
 
-//curl http://<master-node>:<masterport>/clusterstatus eg http://loalhost:1335/clusterstatus
+//curl http://<master-node>:<masterport>/clusterstatus eg http://localhost:1335/clusterstatus
 //curl -X POST --data 'Akka Http is Cool' http://<master-node>:1335/v1/id/ALICE
 class ApiServer(controller : ActorRef ) extends HttpApp with OrderJsonSupport {
   def route =

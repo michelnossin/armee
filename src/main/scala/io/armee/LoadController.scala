@@ -114,6 +114,7 @@ class LoadController(seedPort: Option[Int],seedHost: String,yamlConfig : YamlCon
             //val agentType = "WORKER"
 
             case  Some(m) => {
+              println("running " + m.group(3).toInt)
               val agentType = m.group(3).toInt match {
                 case `configuredMasterPort` => "Master"
                 case `configuredShellPort` => "Shell"
