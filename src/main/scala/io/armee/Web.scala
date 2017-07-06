@@ -1,13 +1,37 @@
 package io.armee
 
-import org.singlespaced.d3js.Ops._
-import org.singlespaced.d3js.d3
-
 import scala.scalajs.js
+import org.scalajs.dom
+import dom.document
+
+import scala.scalajs.js.annotation.JSExportTopLevel
+import org.scalajs.jquery.jQuery
 
 //sbt clean + fastOptJS to create the jar's in target/<scala version/*.jar
 //Open index.html to view
 
+object ScalaJSExample extends js.JSApp {
+
+  var mainPage = None
+
+  //index.html
+  def main(): Unit = {
+    jQuery("#main-button").click(() => mainButtonClick())
+    jQuery("#cluster-button").click(() => clusterButtonClick())
+    //jQuery("#appl").html("<p>This is the main menu of Armee</p>")
+    mainButtonClick()
+  }
+
+  def mainButtonClick(): Unit = {
+    jQuery("#appl").html("<p>Welcome to Armee. This web application can be used to control and monitor the load on you Big Data Hub. </p>" +
+    "<p>Click cluster status to see the hosts , master, shell and executor workers running across the cluster. </p>")
+  }
+
+  def clusterButtonClick(): Unit = {
+    jQuery("#appl").html("<p>Cluster button clicked</p>")
+  }
+
+}
 /*
 object ScalaJSExample extends js.JSApp {
 
@@ -57,7 +81,7 @@ object ScalaJSExample extends js.JSApp {
 
 */
 
-
+/*
 object ScalaJSExample extends js.JSApp {
 
   def main(): Unit = {
@@ -84,3 +108,5 @@ object ScalaJSExample extends js.JSApp {
   }
 
 }
+
+*/
