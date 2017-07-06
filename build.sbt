@@ -6,6 +6,10 @@ scalaVersion := "2.11.7"
 
 version := "0.0.1-SNAPSHOT"
 
+persistLauncher in Compile := true
+
+persistLauncher in Test := false
+
 libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "3.0.1" % "test",
   "org.scala-lang" % "scala-reflect" % "2.11.7",
