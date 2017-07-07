@@ -17,6 +17,8 @@
 
 package io.armee
 
+import java.nio.file.{Files, Paths}
+
 import akka.actor.{ActorSystem, Props}
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity}
 import akka.http.scaladsl.server.HttpApp
@@ -29,12 +31,12 @@ import akka.pattern.ask
 import akka.util.Timeout
 import io.armee.messages.LoadControllerMessages.OrderJsonSupport
 import io.armee.messages.ShellGateWayMessages.ClusterStatusReply
+
 import scala.language.postfixOps
 import scala.concurrent.Await
 import spray.json._
-import scala.concurrent.duration._
-//import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
 
+import scala.concurrent.duration._
 
 //curl http://<master-node>:<masterport>/clusterstatus eg http://localhost:1335/clusterstatus
 //curl -X POST --data 'Akka Http is Cool' http://<master-node>:1335/v1/id/ALICE
@@ -51,8 +53,10 @@ class ApiServer(controller : ActorRef ) extends HttpApp with OrderJsonSupport {
           pathPrefix("target") {
             path(".*".r) { x =>
               get {
-                //println ("x is " + x)
-                getFromFile("target/scala-2.11/" + x)
+                Files.exists(Paths.get("target/scala-2.11/" + x)) match {
+                  case true => getFromFile("target/scala-2.11/" + x)
+                  case _ => getFromFile("target/" + x)
+                }
               }
             }
           }~ //The api's

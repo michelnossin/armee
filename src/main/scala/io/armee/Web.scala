@@ -1,19 +1,10 @@
 package io.armee
 
-import akka.http.scaladsl.model.headers.{Allow, Origin}
-
 import scala.scalajs.js
 import org.scalajs.dom
-import dom.document
-
-import scala.scalajs.js.annotation.JSExportTopLevel
 import org.scalajs.jquery.jQuery
-
 import util._
 import dom.ext._
-import io.armee.messages.LoadControllerMessages.AgentStatus
-import sun.management.resources.agent
-
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 //import scalatags.Text.all._
 
@@ -47,11 +38,7 @@ object Web extends js.JSApp {
 
   def parseJson(jsn : String): String = {
     val agents =js.JSON.parse(jsn).agents.asInstanceOf[js.Array[MyStruct]]
-
-    //agents.map(_.host).toString
-    //agents.map(x => "<tr><td>" + x.host.toString + "</td><td>" + x.port.toString + "</td><td>" + x.typeAgent.toString + "</td><td>" + x.state.toString + "</td></tr>").mkString("")
     val agentsHtml = agents.map(x => "<tr><td>" + x.host.toString + "</td><td>" + x.port.toString + "</td><td>" + x.typeAgent.toString + "</td><td>" + x.state.toString + "</td></tr>").mkString("")
-
     "<table border='1'>" +  "<tr><th>Host</th><th>Port</th><th>Role</th><th>State</th></tr>" + agentsHtml + "</table>"
     /*
     val agentsHtml = for (agent <- agents) yield  {
@@ -69,8 +56,7 @@ object Web extends js.JSApp {
     jQuery("#appl").html("<p>Loading cluster status:</p>")
 
     val url = "http://localhost:1335/clusterstatus"
-    //val headersRequest : Map[String,String] = Map("Access-Control-Allow-Origin" -> "*")
-    val f=Ajax.post(url)   //'Access-Control-Allow-Origin: *' , url) //headers = headersRequest
+    val f=Ajax.post(url)
 
 
     f.onComplete{
@@ -78,9 +64,6 @@ object Web extends js.JSApp {
         print ("received: " + xhr.responseText.toString)
         jQuery("#appl").html("<p>Status received OK:" + parseJson(xhr.responseText.toString)+ "</p>")
       }
-        //val json=js.JSON.parse(xhr.responseText)
-        //val body=json.agents.toString.mkString(" ")
-        //jQuery("#appl").html("<p>OK:" + json + "</p>")
       case Failure(e) => jQuery("#appl").html("<p>Failed: " + e.toString + "</p>") //df
     }
   }

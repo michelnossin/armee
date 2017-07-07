@@ -3,6 +3,12 @@ Load testing tool for Big Data Hub. Work in progress.
 
 DISCLAIMER: Use at your own risk
 
+###Prereq (for building yourself)
+```
+Check if nodejs is installed (node -v)
+Install latest domjs module: (node install domjs)
+```
+
 ###To build:
 ```
 Clone the repository.
