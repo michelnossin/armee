@@ -35,7 +35,7 @@ object LoadControllerMessages {
 
   case class ClusterStatus()
 
-  case class AgentStatus(host: String, port: Int, agentType: String, state: String)
+  case class AgentStatus(host: String, port: Int, typeAgent: String, state: String)
   case class NamedList[A](name: String, items: List[A])
 
   trait OrderJsonSupport extends DefaultJsonProtocol {
@@ -45,7 +45,7 @@ object LoadControllerMessages {
           JsObject(List(
             "host" -> agentStatus.host.toJson,
             "port" -> agentStatus.port.toJson,
-            "type" -> agentStatus.agentType.toJson,
+            "typeAgent" -> agentStatus.typeAgent.toJson,
             "state" -> agentStatus.state.toJson
 
           ))

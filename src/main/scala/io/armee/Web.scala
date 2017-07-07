@@ -11,6 +11,8 @@ import org.scalajs.jquery.jQuery
 
 import util._
 import dom.ext._
+import io.armee.messages.LoadControllerMessages.AgentStatus
+import sun.management.resources.agent
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 //import scalatags.Text.all._
@@ -35,6 +37,34 @@ object Web extends js.JSApp {
     "<p>Click cluster status to see the hosts , master, shell and executor workers running across the cluster. </p>")
   }
 
+  @js.native
+  trait MyStruct extends js.Object {
+    val host : String = js.native
+    val port : Integer = js.native
+    val typeAgent : String = js.native
+    val state : String = js.native
+  }
+
+  def parseJson(jsn : String): String = {
+    val agents =js.JSON.parse(jsn).agents.asInstanceOf[js.Array[MyStruct]]
+
+    //agents.map(_.host).toString
+    //agents.map(x => "<tr><td>" + x.host.toString + "</td><td>" + x.port.toString + "</td><td>" + x.typeAgent.toString + "</td><td>" + x.state.toString + "</td></tr>").mkString("")
+    val agentsHtml = agents.map(x => "<tr><td>" + x.host.toString + "</td><td>" + x.port.toString + "</td><td>" + x.typeAgent.toString + "</td><td>" + x.state.toString + "</td></tr>").mkString("")
+
+    "<table border='1'>" +  "<tr><th>Host</th><th>Port</th><th>Role</th><th>State</th></tr>" + agentsHtml + "</table>"
+    /*
+    val agentsHtml = for (agent <- agents) yield  {
+      val hostP = agent.host
+      val portP = agent.port
+      val typeP = agent.typeAgent
+      val statusP = agent.state
+      s"<tr><td>$hostP</td><td>$portP</td><td>$typeP</td><td>$statusP</td></tr>"
+    }
+    s"<table>" + agentsHtml.mkString("") + s"</table>"
+    */
+  }
+
   def clusterButtonClick(): Unit = {
     jQuery("#appl").html("<p>Loading cluster status:</p>")
 
@@ -42,11 +72,15 @@ object Web extends js.JSApp {
     //val headersRequest : Map[String,String] = Map("Access-Control-Allow-Origin" -> "*")
     val f=Ajax.post(url)   //'Access-Control-Allow-Origin: *' , url) //headers = headersRequest
 
+
     f.onComplete{
-      case Success(xhr) =>
-        val json=js.JSON.parse(xhr.responseText)
-        val body=json.agents.toString.mkString(" ")
-        jQuery("#appl").html("<p>OK:" + xhr.responseText.toString + "</p>")
+      case Success(xhr) => {
+        print ("received: " + xhr.responseText.toString)
+        jQuery("#appl").html("<p>Status received OK:" + parseJson(xhr.responseText.toString)+ "</p>")
+      }
+        //val json=js.JSON.parse(xhr.responseText)
+        //val body=json.agents.toString.mkString(" ")
+        //jQuery("#appl").html("<p>OK:" + json + "</p>")
       case Failure(e) => jQuery("#appl").html("<p>Failed: " + e.toString + "</p>") //df
     }
   }
