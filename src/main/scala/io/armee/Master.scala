@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.armee
 
 import akka.actor.{ActorSystem, Props}
@@ -31,32 +32,53 @@ import io.armee.messages.ShellGateWayMessages.ClusterStatusReply
 import scala.language.postfixOps
 import scala.concurrent.Await
 import spray.json._
-import DefaultJsonProtocol._
 import scala.concurrent.duration._
+//import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
+
 
 //curl http://<master-node>:<masterport>/clusterstatus eg http://localhost:1335/clusterstatus
 //curl -X POST --data 'Akka Http is Cool' http://<master-node>:1335/v1/id/ALICE
 class ApiServer(controller : ActorRef ) extends HttpApp with OrderJsonSupport {
-  def route =
-    pathPrefix("v1") {
-      path("clusterstatus")  {
-        get {
-          implicit val timeout = Timeout(3 seconds)
-          val clusterStatus = controller ? ClusterStatus()
-          val result = Await.result(clusterStatus, timeout.duration).asInstanceOf[ClusterStatusReply]
+  def route =  {
+          //Resources
+          pathPrefix("resources") {
+            path(".*".r) { x =>
+              get {
+                getFromResource( x)
+              }
+            }
+          }~ //The jars
+          pathPrefix("target") {
+            path(".*".r) { x =>
+              get {
+                //println ("x is " + x)
+                getFromFile("target/scala-2.11/" + x)
+              }
+            }
+          }~ //The api's
+          path("clusterstatus") {
+            post {
+              implicit val timeout = Timeout(3 seconds)
+              val clusterStatus = controller ? ClusterStatus()
+              val result = Await.result(clusterStatus, timeout.duration).asInstanceOf[ClusterStatusReply]
 
-          complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, {
-            val lijst = result.status.items.collect { case x => x.toJson(agentWriter).toString }
-            """ { "agents" : [""" + lijst.mkString(",") + "] }"
-          })) //~
-            //post {
-            //  entity(as[String]) { entity =>
-            //    complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, s"<b>Thanks $id for posting your message <i>$entity</i></b>"))
-            //  }
-            //}
-        }
+              complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, {
+                val lijst = result.status.items.collect { case x => x.toJson(agentWriter).toString }
+                """ { "agents" : [""" + lijst.mkString(",") + "] }"
+              })) //~
+              //post {
+              //  entity(as[String]) { entity =>
+              //    complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, s"<b>Thanks $id for posting your message <i>$entity</i></b>"))
+              //  }
+              //}
+            }
+          }~ //Main app
+          path("") {
+            get {
+              getFromResource("index.html")
+            }
+          }
       }
-    }
 }
 
 object Master extends App {

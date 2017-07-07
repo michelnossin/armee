@@ -15,7 +15,8 @@ libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-reflect" % "2.11.7",
   "com.typesafe.akka" %% "akka-actor" % "2.5.2",
   "com.typesafe.akka" %% "akka-cluster" % "2.5.2",
-  "com.typesafe.akka" %% "akka-testkit" % "2.5.2"
+  "com.typesafe.akka" %% "akka-testkit" % "2.5.2",
+  "ch.megard" % "akka-http-cors_2.11" % "0.2.1"
 )
 
 libraryDependencies ++= Seq("org.yaml" % "snakeyaml" % "1.16")
@@ -38,3 +39,8 @@ libraryDependencies += "be.doeraene" %%% "scalajs-jquery" % "0.9.1"
 skip in packageJSDependencies := false
 jsDependencies +=
   "org.webjars" % "jquery" % "2.1.4" / "2.1.4/jquery.js"
+
+libraryDependencies += "com.lihaoyi" %% "scalatags" % "0.6.5"
+
+// In the JS project's settings
+target in Compile := file("src/main/resources")

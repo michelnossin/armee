@@ -28,4 +28,6 @@ start_worker.sh (on 1 or more hosts, eg on the master host or some other host(s)
 ###To use:
 ```
 start_shell.sh (once, on any host)
+OR 
+http://localhost:1335 in browser (http://<masternode>:<apiport> in config.yaml)
 ```

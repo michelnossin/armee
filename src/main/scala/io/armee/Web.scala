@@ -1,5 +1,7 @@
 package io.armee
 
+import akka.http.scaladsl.model.headers.{Allow, Origin}
+
 import scala.scalajs.js
 import org.scalajs.dom
 import dom.document
@@ -7,10 +9,16 @@ import dom.document
 import scala.scalajs.js.annotation.JSExportTopLevel
 import org.scalajs.jquery.jQuery
 
+import util._
+import dom.ext._
+
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
+//import scalatags.Text.all._
+
 //sbt clean + fastOptJS to create the jar's in target/<scala version/*.jar
 //Open index.html to view
 
-object ScalaJSExample extends js.JSApp {
+object Web extends js.JSApp {
 
   var mainPage = None
 
@@ -18,7 +26,7 @@ object ScalaJSExample extends js.JSApp {
   def main(): Unit = {
     jQuery("#main-button").click(() => mainButtonClick())
     jQuery("#cluster-button").click(() => clusterButtonClick())
-    //jQuery("#appl").html("<p>This is the main menu of Armee</p>")
+
     mainButtonClick()
   }
 
@@ -28,9 +36,20 @@ object ScalaJSExample extends js.JSApp {
   }
 
   def clusterButtonClick(): Unit = {
-    jQuery("#appl").html("<p>Cluster button clicked</p>")
-  }
+    jQuery("#appl").html("<p>Loading cluster status:</p>")
 
+    val url = "http://localhost:1335/clusterstatus"
+    //val headersRequest : Map[String,String] = Map("Access-Control-Allow-Origin" -> "*")
+    val f=Ajax.post(url)   //'Access-Control-Allow-Origin: *' , url) //headers = headersRequest
+
+    f.onComplete{
+      case Success(xhr) =>
+        val json=js.JSON.parse(xhr.responseText)
+        val body=json.agents.toString.mkString(" ")
+        jQuery("#appl").html("<p>OK:" + xhr.responseText.toString + "</p>")
+      case Failure(e) => jQuery("#appl").html("<p>Failed: " + e.toString + "</p>") //df
+    }
+  }
 }
 /*
 object ScalaJSExample extends js.JSApp {
