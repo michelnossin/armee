@@ -3,6 +3,58 @@
 <head>
     <title>Armee web app</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <script>
+
+
+			var gauges = [];
+
+			function createGauge(name, label, min, max)
+			{
+				var config =
+				{
+					size: 120,
+					label: label,
+					min: undefined != min ? min : 0,
+					max: undefined != max ? max : 100,
+					minorTicks: 5,
+					value: 0
+				}
+
+				var range = config.max - config.min;
+				config.yellowZones = [{ from: config.min + range*0.75, to: config.min + range*0.9 }];
+				config.redZones = [{ from: config.min + range*0.9, to: config.max }];
+
+				gauges[name] = new Gauge(name + "GaugeContainer", config);
+				gauges[name].render();
+			}
+
+			function createGauges()
+			{
+			    createGauge("memory", "Failed",0,10);
+				createGauge("cpu", "MsgSec",0,10000);
+			}
+
+			function updateGauges()
+			{
+				for (var key in gauges)
+				{
+					//var value = getRandomValue(gauges[key])
+					gauges[key].redraw(gauges[key].config.value);
+				}
+			}
+
+            function updateGauge(key,value)
+            {
+                gauges[key].config.value = value
+             }
+
+			function initialize()
+			{
+				createGauges();
+				setInterval(updateGauges, 5000);
+			}
+
+		</script>
 </head>
 <body>
 
@@ -10,12 +62,14 @@
 </div>
 
 <p style="background-color:darkgreen;"><img src="./resources/soldier.png" alt="Armee" style="width:4%;height:4%;"><font size="22" style="foreground-color:white;">Armee : Military loadtesting</font></p>
-<p><button id="main-button" type="button">Main menu</button> <button id="cluster-button" type="button">Cluster status</button></p>
+<p><button id="main-button" type="button">Main menu</button> <button id="cluster-button" type="button">Cluster status</button> <button id="war-button" type="button">War room</button></p>
 <div id="appl"></div>
 <script type="text/javascript" src="./target/armee-jsdeps.js"></script>
 <script type="text/javascript" src="./target/armee-fastopt.js"></script>
 <script type="text/javascript" src="./target/armee-launcher.js"></script>
 
+<script type="text/javascript" src="http://mbostock.github.com/d3/d3.js"></script>
+<script type="text/javascript" src="./resources/gauge.js"></script>
 
 </body>
 </html>

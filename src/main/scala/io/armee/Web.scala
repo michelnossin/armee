@@ -7,6 +7,8 @@ import util._
 import dom.ext._
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 //import scalatags.Text.all._
+import org.singlespaced.d3js.Ops._
+import org.singlespaced.d3js.d3
 
 //sbt clean + fastOptJS to create the jar's in target/<scala version/*.jar
 //Open index.html to view
@@ -19,6 +21,7 @@ object Web extends js.JSApp {
   def main(): Unit = {
     jQuery("#main-button").click(() => mainButtonClick())
     jQuery("#cluster-button").click(() => clusterButtonClick())
+    jQuery("#war-button").click(() => warButtonClick())
 
     mainButtonClick()
   }
@@ -52,8 +55,9 @@ object Web extends js.JSApp {
     */
   }
 
+
   def clusterButtonClick(): Unit = {
-    jQuery("#appl").html("<p>Loading cluster status:</p>")
+    jQuery("#appl").html("<p>Requesting cluster status....</p>")
 
     val url = "http://localhost:1335/clusterstatus"
     val f=Ajax.post(url)
@@ -66,7 +70,48 @@ object Web extends js.JSApp {
       }
       case Failure(e) => jQuery("#appl").html("<p>Failed: " + e.toString + "</p>") //df
     }
+
   }
+
+  def warButtonClick() : Unit = {
+    jQuery("#appl").html("<p>Preparing the war room for battle testing....</p>")
+
+    jQuery("#appl").html("""<span id="memoryGaugeContainer"></span> <span id="cpuGaugeContainer"></span> <span id="networkGaugeContainer"></span> <span id="testGaugeContainer"></span>""")
+
+/*
+    val matrix = js.Array(
+      js.Array(11975,  5871, 8916, 2868),
+      js.Array( 1951, 10048, 2060, 6171),
+      js.Array( 8010, 16145, 8090, 8045),
+      js.Array( 1013,   990,  940, 6907)
+    )
+
+    val tr = d3.select("#appl").append("table").selectAll("tr")
+      .data(matrix)
+      .enter().append("tr")
+    println("hihi")
+    val td = tr.selectAll("td")
+      .data( (d:js.Array[Int]) => { println(d); d; } )
+      .enter().append("td")
+      .text( (d:Int) => d.toString)
+*/
+
+    js.Dynamic.global.initialize()
+
+    js.Dynamic.global.updateGauge("cpu",3000)
+    js.Dynamic.global.updateGauge("memory",20)
+
+    //js.Dynamic.global.setGaugeValue("msgsec",10)
+    //js.Dynamic.global.setGaugeValue("fail",20)
+    //val gauges = js.Dynamic.global.gauges.asInstanceOf[js.UndefOr[js.Array[js.native]]]
+    //gauges.foreach(x => x.redraw(10))
+
+      //js.Dynamic.global.gauges(0).redraw(10)
+      //js.Dynamic.global.gauges['msgsec'].redraw(10);
+  }
+
+
+
 }
 /*
 object ScalaJSExample extends js.JSApp {
