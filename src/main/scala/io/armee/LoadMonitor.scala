@@ -49,11 +49,11 @@ class LoadMonitor(port : Int,seedPort: Option[Int]) extends Actor with ActorLogg
 
     val address = Address("akka.tcp", "armee", "127.0.0.1", port)
 
-    context.system.scheduler.schedule(FiniteDuration(1, SECONDS), FiniteDuration(5, SECONDS)) {
+    context.system.scheduler.schedule(FiniteDuration(1, SECONDS), FiniteDuration(1, SECONDS)) {
       val eventGenerators = context.actorSelection(address.toString + "/user/eventgenerator*")
       eventGenerators ! MonitorRequests()
     }
-    context.system.scheduler.schedule(FiniteDuration(1, SECONDS), FiniteDuration(5, SECONDS)) {
+    context.system.scheduler.schedule(FiniteDuration(1, SECONDS), FiniteDuration(1, SECONDS)) {
       totalRequestRate = (deltaTotalRequests)/5
       totalFailureRate = (deltaTotalFailures)/5
       //println("Msg per sec (avg last 5 sec):" + totalRequestRate + " , failed: " + totalFailureRate)

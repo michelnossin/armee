@@ -18,8 +18,6 @@ package io.armee.messages
 
 import spray.json.{DefaultJsonProtocol, JsonFormat}
 import spray.json._
-import DefaultJsonProtocol._
-import sun.management.resources.agent
 
 object LoadControllerMessages {
 

@@ -15,6 +15,7 @@ import org.singlespaced.d3js.d3
 
 object Web extends js.JSApp {
 
+  var teller = 100
   var mainPage = None
 
   //index.html
@@ -28,90 +29,67 @@ object Web extends js.JSApp {
 
   def mainButtonClick(): Unit = {
     jQuery("#appl").html("<p>Welcome to Armee. This web application can be used to control and monitor the load on you Big Data Hub. </p>" +
-    "<p>Click cluster status to see the hosts , master, shell and executor workers running across the cluster. </p>")
+      "<p>Click cluster status to see the hosts , master, shell and executor workers running across the cluster. </p>")
   }
 
   @js.native
   trait MyStruct extends js.Object {
-    val host : String = js.native
-    val port : Integer = js.native
-    val typeAgent : String = js.native
-    val state : String = js.native
+    val host: String = js.native
+    val port: Integer = js.native
+    val typeAgent: String = js.native
+    val state: String = js.native
   }
 
-  def parseJson(jsn : String): String = {
-    val agents =js.JSON.parse(jsn).agents.asInstanceOf[js.Array[MyStruct]]
+  def parseJson(jsn: String): String = {
+    val agents = js.JSON.parse(jsn).agents.asInstanceOf[js.Array[MyStruct]]
     val agentsHtml = agents.map(x => "<tr><td>" + x.host.toString + "</td><td>" + x.port.toString + "</td><td>" + x.typeAgent.toString + "</td><td>" + x.state.toString + "</td></tr>").mkString("")
-    "<table border='1'>" +  "<tr><th>Host</th><th>Port</th><th>Role</th><th>State</th></tr>" + agentsHtml + "</table>"
-    /*
-    val agentsHtml = for (agent <- agents) yield  {
-      val hostP = agent.host
-      val portP = agent.port
-      val typeP = agent.typeAgent
-      val statusP = agent.state
-      s"<tr><td>$hostP</td><td>$portP</td><td>$typeP</td><td>$statusP</td></tr>"
-    }
-    s"<table>" + agentsHtml.mkString("") + s"</table>"
-    */
+    "<table border='1'>" + "<tr><th>Host</th><th>Port</th><th>Role</th><th>State</th></tr>" + agentsHtml + "</table>"
   }
 
 
   def clusterButtonClick(): Unit = {
     jQuery("#appl").html("<p>Requesting cluster status....</p>")
 
-    val url = "http://localhost:1335/clusterstatus"
-    val f=Ajax.post(url)
+    val url = "http://localhost:1335/clusterstatus" //TODO change masterserver and api port in config
+    val f = Ajax.post(url)
 
 
-    f.onComplete{
+    f.onComplete {
       case Success(xhr) => {
-        print ("received: " + xhr.responseText.toString)
-        jQuery("#appl").html("<p>Status received OK:" + parseJson(xhr.responseText.toString)+ "</p>")
+        print("received: " + xhr.responseText.toString)
+        jQuery("#appl").html("<p>Status received OK:" + parseJson(xhr.responseText.toString) + "</p>")
       }
       case Failure(e) => jQuery("#appl").html("<p>Failed: " + e.toString + "</p>") //df
     }
 
   }
 
-  def warButtonClick() : Unit = {
-    jQuery("#appl").html("<p>Preparing the war room for battle testing....</p>")
+  def warButtonClick(): Unit = {
+    jQuery("#appl").html("<p>Preparing the master war room for battle testing....</p>")
 
     jQuery("#appl").html("""<span id="memoryGaugeContainer"></span> <span id="cpuGaugeContainer"></span> <span id="networkGaugeContainer"></span> <span id="testGaugeContainer"></span>""")
 
-/*
-    val matrix = js.Array(
-      js.Array(11975,  5871, 8916, 2868),
-      js.Array( 1951, 10048, 2060, 6171),
-      js.Array( 8010, 16145, 8090, 8045),
-      js.Array( 1013,   990,  940, 6907)
-    )
-
-    val tr = d3.select("#appl").append("table").selectAll("tr")
-      .data(matrix)
-      .enter().append("tr")
-    println("hihi")
-    val td = tr.selectAll("td")
-      .data( (d:js.Array[Int]) => { println(d); d; } )
-      .enter().append("td")
-      .text( (d:Int) => d.toString)
-*/
-
     js.Dynamic.global.initialize()
 
-    js.Dynamic.global.updateGauge("cpu",3000)
-    js.Dynamic.global.updateGauge("memory",20)
+    js.timers.setInterval(1000) {
 
-    //js.Dynamic.global.setGaugeValue("msgsec",10)
-    //js.Dynamic.global.setGaugeValue("fail",20)
-    //val gauges = js.Dynamic.global.gauges.asInstanceOf[js.UndefOr[js.Array[js.native]]]
-    //gauges.foreach(x => x.redraw(10))
+      val url = "http://localhost:1335/soldiersmetrics" //TODO change masterserver and api port in config
+      val f=Ajax.post(url)
 
-      //js.Dynamic.global.gauges(0).redraw(10)
-      //js.Dynamic.global.gauges['msgsec'].redraw(10);
+
+      f.onComplete{
+        case Success(xhr) => {
+          val msgPerSecondJson = js.JSON.parse(xhr.responseText.toString)
+          val msgPerSecond = msgPerSecondJson.soldiers.msgPerSecond
+          js.Dynamic.global.updateGauge("cpu",msgPerSecond)
+          js.Dynamic.global.updateGauge("memory",20)
+          //print ("received: " + xhr.responseText.toString)
+          //jQuery("#appl").html("<p>Status received OK:" + parseJson(xhr.responseText.toString)+ "</p>")
+        }
+        case Failure(e) => jQuery("#appl").html("<p>Failed: " + e.toString + "</p>") //df
+      }
+    }
   }
-
-
-
 }
 /*
 object ScalaJSExample extends js.JSApp {

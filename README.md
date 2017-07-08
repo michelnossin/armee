@@ -6,7 +6,7 @@ DISCLAIMER: Use at your own risk
 ###Prereq (for building yourself)
 ```
 Check if nodejs is installed (node -v)
-Install latest domjs module: (node install domjs)
+Install latest domjs module: (npm install domjs or jsdom)
 ```
 
 ###To build:

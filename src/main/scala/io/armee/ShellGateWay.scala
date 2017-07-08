@@ -38,7 +38,7 @@ class ShellGateWay (shellPort: Int, masterPort: Int,masterServer: String) extend
       master ! SendSoldiers(num)
     }
     case SoldiersMetricsReply(msgPerSecond,failuresperSecond) => {
-      println("Msg/s (average 5 secs): " + msgPerSecond + ",failures: " + failuresperSecond)
+      println("Msg/s : " + msgPerSecond + ",failures: " + failuresperSecond)
     }
     case SoldiersMetrics() => master ! SoldiersMetrics()
     case ClusterStatus() => master ! ClusterStatus()

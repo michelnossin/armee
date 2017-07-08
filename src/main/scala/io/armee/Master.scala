@@ -26,11 +26,10 @@ import akka.http.scaladsl.settings.ServerSettings
 import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import io.armee.config.YamlConfig
 import akka.actor.ActorRef
-import io.armee.messages.LoadControllerMessages.{AgentStatus, ClusterStatus, NamedList}
+import io.armee.messages.LoadControllerMessages._
 import akka.pattern.ask
 import akka.util.Timeout
-import io.armee.messages.LoadControllerMessages.OrderJsonSupport
-import io.armee.messages.ShellGateWayMessages.ClusterStatusReply
+import io.armee.messages.ShellGateWayMessages.{ClusterStatusReply, SoldiersMetricsReply}
 
 import scala.language.postfixOps
 import scala.concurrent.Await
@@ -42,14 +41,14 @@ import scala.concurrent.duration._
 //curl -X POST --data 'Akka Http is Cool' http://<master-node>:1335/v1/id/ALICE
 class ApiServer(controller : ActorRef ) extends HttpApp with OrderJsonSupport {
   def route =  {
-          //Resources
+          //Resources like config file, images etc
           pathPrefix("resources") {
             path(".*".r) { x =>
               get {
                 getFromResource( x)
               }
             }
-          }~ //The jars
+          }~ //The jars made by fastOptJS in sbt (used for scala.js
           pathPrefix("target") {
             path(".*".r) { x =>
               get {
@@ -75,6 +74,18 @@ class ApiServer(controller : ActorRef ) extends HttpApp with OrderJsonSupport {
               //    complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, s"<b>Thanks $id for posting your message <i>$entity</i></b>"))
               //  }
               //}
+            }
+          }~
+          path("soldiersmetrics") {
+            post {
+              implicit val timeout = Timeout(3 seconds)
+              val soldiersMetrics = controller ? SoldiersMetrics()
+              val result = Await.result(soldiersMetrics, timeout.duration).asInstanceOf[SoldiersMetricsReply]
+
+              complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, {
+                """{ "soldiers" : { "msgPerSecond" : """ + result.msgPerSecond.toJson.toString() +
+                  """ , "failureperSecond" : """ + result.failuresperSecond.toJson.toString() + "} }"
+              }))
             }
           }~ //Main app
           path("") {
