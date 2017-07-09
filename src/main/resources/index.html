@@ -3,6 +3,45 @@
 <head>
     <title>Armee web app</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script>
+
+        var chart
+        var data
+        var options
+
+      google.charts.load('current', {'packages':['corechart']});
+      google.charts.setOnLoadCallback(drawChart);
+
+      function drawChart() {
+        data = google.visualization.arrayToDataTable([
+          ['Time', 'MsgPerSec', 'Dropped messages'],
+          ['0',  0,      0]
+        ]);
+
+          //['2013',  1000,      400],
+          //['2014',  1170,      460],
+          //['2015',  660,       1120],
+          //['2016',  1030,      540]
+
+        options = {
+          title: 'Load testing',
+          hAxis: {title: 'Time',  titleTextStyle: {color: '#333'}},
+          vAxis: {minValue: 0}
+        };
+        chart = new google.visualization.AreaChart(document.getElementById('chart_div'));
+        //chart.draw(data, options);
+        //startDraw()
+      };
+
+    function startDraw() {
+        chart.draw(data, options);
+       };
+
+
+    </script>
     <script>
 
 
@@ -12,7 +51,7 @@
 			{
 				var config =
 				{
-					size: 120,
+					size: 420,
 					label: label,
 					min: undefined != min ? min : 0,
 					max: undefined != max ? max : 100,
@@ -55,6 +94,7 @@
 			}
 
 		</script>
+
 </head>
 <body>
 
@@ -64,6 +104,7 @@
 <p style="background-color:darkgreen;"><img src="./resources/soldier.png" alt="Armee" style="width:4%;height:4%;"><font size="22" style="foreground-color:white;">Armee : Military loadtesting</font></p>
 <p><button id="main-button" type="button">Main menu</button> <button id="cluster-button" type="button">Cluster status</button> <button id="war-button" type="button">War room</button></p>
 <div id="appl"></div>
+<div id="chart_div" style="width: 100%; height: 500px;"></div>
 <script type="text/javascript" src="./target/armee-jsdeps.js"></script>
 <script type="text/javascript" src="./target/armee-fastopt.js"></script>
 <script type="text/javascript" src="./target/armee-launcher.js"></script>

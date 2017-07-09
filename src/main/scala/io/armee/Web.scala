@@ -1,10 +1,14 @@
 package io.armee
 
+import com.sun.prism.image.Coords
+
 import scala.scalajs.js
 import org.scalajs.dom
 import org.scalajs.jquery.jQuery
+
 import util._
 import dom.ext._
+
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 //import scalatags.Text.all._
 import org.singlespaced.d3js.Ops._
@@ -69,28 +73,45 @@ object Web extends js.JSApp {
 
     jQuery("#appl").html("""<span id="memoryGaugeContainer"></span> <span id="cpuGaugeContainer"></span> <span id="networkGaugeContainer"></span> <span id="testGaugeContainer"></span>""")
 
-    js.Dynamic.global.initialize()
+    //var matrix = js.Array(  js.Dynamic.literal(date = "24-Apr-07", close = 100),js.Dynamic.literal(date = "25-Apr-07", close = 200))
+    //val svg = d3.select("body").append("svg")
+    //val sel = svg.selectAll("#appl").data(matrix).enter()
+
+    js.Dynamic.global.startDraw() //line chart init
+    js.Dynamic.global.initialize() //gauge init
+
+    var counter = 0
 
     js.timers.setInterval(1000) {
 
       val url = "http://localhost:1335/soldiersmetrics" //TODO change masterserver and api port in config
       val f=Ajax.post(url)
 
-
       f.onComplete{
         case Success(xhr) => {
           val msgPerSecondJson = js.JSON.parse(xhr.responseText.toString)
           val msgPerSecond = msgPerSecondJson.soldiers.msgPerSecond
+          //val failedPerSecond =  msgPerSecondJson.soldiers.failuresperSecond
           js.Dynamic.global.updateGauge("cpu",msgPerSecond)
-          js.Dynamic.global.updateGauge("memory",20)
-          //print ("received: " + xhr.responseText.toString)
-          //jQuery("#appl").html("<p>Status received OK:" + parseJson(xhr.responseText.toString)+ "</p>")
+          //js.Dynamic.global.updateGauge("memory",failedPerSecond)
+
+          //js.Dynamic.global.data.addRow(js.Array(counter.toString,msgPerSecond,200))
+          counter = counter + 1
+          js.Dynamic.global.data.addRow(js.Array(counter.toString,
+            msgPerSecond.asInstanceOf[Int],0)) //failedPerSecond.asInstanceOf[Int]
+          js.Dynamic.global.startDraw()
+
         }
         case Failure(e) => jQuery("#appl").html("<p>Failed: " + e.toString + "</p>") //df
       }
     }
   }
 }
+
+//// The following code was contained in the callback function.
+//x.domain(data.map(function(d) { return d.letter; }));
+//y.domain([0, d3.max(data, function(d) { return d.frequency; })]);
+
 /*
 object ScalaJSExample extends js.JSApp {
 
@@ -167,5 +188,62 @@ object ScalaJSExample extends js.JSApp {
   }
 
 }
+
+
+
+
+        <script>
+
+    var svg = d3.select("svg"),
+        margin = {top: 20, right: 20, bottom: 30, left: 50},
+        width = +svg.attr("width") - margin.left - margin.right,
+        height = +svg.attr("height") - margin.top - margin.bottom,
+        g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    var parseTime = d3.timeParse("%d-%b-%y");
+
+    var x = d3.scaleTime()
+        .rangeRound([0, width]);
+
+    var y = d3.scaleLinear()
+        .rangeRound([height, 0]);
+
+    var area = d3.area()
+        .x(function(d) { return x(d.date); })
+        .y1(function(d) { return y(d.close); });
+
+    d3.tsv("data.tsv", function(d) {
+      d.date = parseTime(d.date);
+      d.close = +d.close;
+      return d;
+    }, function(error, data) {
+      if (error) throw error;
+
+      x.domain(d3.extent(data, function(d) { return d.date; }));
+      y.domain([0, d3.max(data, function(d) { return d.close; })]);
+      area.y0(y(0));
+
+      g.append("path")
+          .datum(data)
+          .attr("fill", "steelblue")
+          .attr("d", area);
+
+      g.append("g")
+          .attr("transform", "translate(0," + height + ")")
+          .call(d3.axisBottom(x));
+
+      g.append("g")
+          .call(d3.axisLeft(y))
+        .append("text")
+          .attr("fill", "#000")
+          .attr("transform", "rotate(-90)")
+          .attr("y", 6)
+          .attr("dy", "0.71em")
+          .attr("text-anchor", "end")
+          .text("Price ($)");
+    });
+
+    </script>
+
 
 */
