@@ -10,6 +10,7 @@ import util._
 import dom.ext._
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
+import scala.scalajs.js.timers.SetIntervalHandle
 //import scalatags.Text.all._
 import org.singlespaced.d3js.Ops._
 import org.singlespaced.d3js.d3
@@ -18,7 +19,8 @@ import org.singlespaced.d3js.d3
 //Open index.html to view
 
 object Web extends js.JSApp {
-  var activeSoldiers = 0
+  var interval: js.UndefOr[js.timers.SetIntervalHandle] = js.undefined
+  var activeSoldiers,counter = 0
   var teller = 100
   var mainPage = None
 
@@ -32,13 +34,15 @@ object Web extends js.JSApp {
   }
 
   def mainButtonClick(): Unit = {
+    interval foreach js.timers.clearInterval
+    interval = js.undefined
     jQuery("#appl").html("<p>Welcome to Armee. This web application can be used to control and monitor the load on you Big Data Hub. </p>" +
       "<p>Click cluster status to see the hosts , master, shell and executor workers running across the cluster. </p>")
+    jQuery("#chart_div").html("")
   }
 
   @js.native
   trait MyStruct extends js.Object {
-
     val host: String = js.native
     val port: Integer = js.native
     val typeAgent: String = js.native
@@ -53,6 +57,9 @@ object Web extends js.JSApp {
 
 
   def clusterButtonClick(): Unit = {
+    interval foreach js.timers.clearInterval
+    interval = js.undefined
+    jQuery("#chart_div").html("")
     jQuery("#appl").html("<p>Requesting cluster status....</p>")
 
     val url = "http://localhost:1335/clusterstatus" //TODO change masterserver and api port in config
@@ -88,12 +95,14 @@ object Web extends js.JSApp {
     jQuery("#max-button").click(() => increaseSoldiersButtonClick())
     jQuery("#min-button").click(() => decreaseSoldiersButtonClick())
 
-    js.Dynamic.global.startDraw() //line chart init
+    js.Dynamic.global.drawChart() //config line chart
+    js.Dynamic.global.startDraw() //and start draw
+
     js.Dynamic.global.initialize() //gauge init
 
-    var counter = 0
+    counter = 0
 
-    js.timers.setInterval(1000) {
+   interval = js.timers.setInterval(1000) {
 
       val url = "http://localhost:1335/soldiersmetrics" //TODO change masterserver and api port in config
       val f=Ajax.post(url)
