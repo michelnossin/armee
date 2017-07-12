@@ -67,13 +67,6 @@ class ApiServer(controller : ActorRef ) extends HttpApp with OrderJsonSupport {
               controller ! SendSoldiers(num.toInt)
               complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, s"<b>num soldiers: $num , for posting your message <i>$entity</i></b>"))
               }
-          //post {
-          //  //implicit val timeout = Timeout(3 seconds)
-          //  val soldiersMetrics = controller ! SendSoldiers(num.asInstanceOf[Int])
-          //  complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, {
-          //    """"{ "OK" }"""
-          //  }))
-
           }
         }
       } ~ //The api's
@@ -86,12 +79,7 @@ class ApiServer(controller : ActorRef ) extends HttpApp with OrderJsonSupport {
           complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, {
             val lijst = result.status.items.collect { case x => x.toJson(agentWriter).toString }
             """ { "agents" : [""" + lijst.mkString(",") + "] }"
-          })) //~
-          //post {
-          //  entity(as[String]) { entity =>
-          //    complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, s"<b>Thanks $id for posting your message <i>$entity</i></b>"))
-          //  }
-          //}
+          }))
         }
       } ~
       path("soldiersmetrics") {

@@ -54,7 +54,7 @@ class LoadController(seedPort: Option[Int],seedHost: String,yamlConfig : YamlCon
       classOf[MemberEvent], classOf[UnreachableMember])
 
     seedPort.foreach { _ =>
-      //Each 5 seconds ask the monitor state to all executor monitors
+      //Each 1 second ask the monitor state to all executor monitors
       context.system.scheduler.schedule(FiniteDuration(1, SECONDS), FiniteDuration(1, SECONDS)) {
         router.route(ControllerMonitorRequest(), self)
       }
@@ -128,13 +128,10 @@ class LoadController(seedPort: Option[Int],seedHost: String,yamlConfig : YamlCon
               }
               AgentStatus(m.group(2).toString,m.group(3).toInt,agentType,member.status.toString)
             }
-            //(m.group(2).toString, m.group(3).toInt , member.status.toString)
-            //case None => AgentStatus("dfsf",1234,"HALO","UP")
         }
       }
       val cs = new NamedList[AgentStatus](name = "clusterstatus", items = status.toList)
       sender ! ClusterStatusReply(cs)
-
 
     }
     case _: MemberEvent => // ignore

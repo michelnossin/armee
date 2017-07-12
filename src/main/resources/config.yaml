@@ -1,6 +1,8 @@
 shellPort : 1336
 masterPort : 1337
-workerPort : 1338 #make sure port range <workerPort> + <workerPort + numExecutorsPerServer > are free
+workerPort : 1338
 apiPort : 1335
 masterServer : "127.0.0.1"
 numExecutorsPerServer  : 4
+awsAccessKey: "somekey"
+awsSecretKey: "Some other key"

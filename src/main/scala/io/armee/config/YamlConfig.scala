@@ -14,6 +14,8 @@ class YamlConfig {
   @BeanProperty var apiPort = 1335
   @BeanProperty var masterServer = "127.0.0.1"
   @BeanProperty var numExecutorsPerServer = 4
+  @BeanProperty var awsAccessKey = ""
+  @BeanProperty var awsSecretKey = ""
 
   def readConfig() : YamlConfig = {
 
