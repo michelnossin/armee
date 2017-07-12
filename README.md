@@ -36,4 +36,5 @@ start_worker.sh (on 1 or more hosts, eg on the master host or some other host(s)
 start_shell.sh (once, on any host)
 OR 
 http://localhost:1335 in browser (http://<masternode>:<apiport> in config.yaml)
+NOTICE: Some client pc's are only allowed to reach eg port 80. Change the api setting to 80 to prevent errors.
 ```

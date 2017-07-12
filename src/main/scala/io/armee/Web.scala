@@ -70,12 +70,7 @@ object Web extends js.JSApp {
 
   def warButtonClick(): Unit = {
     jQuery("#appl").html("<p>Preparing the master war room for battle testing....</p>")
-
     jQuery("#appl").html("""<span id="memoryGaugeContainer"></span> <span id="cpuGaugeContainer"></span> <span id="networkGaugeContainer"></span> <span id="testGaugeContainer"></span>""")
-
-    //var matrix = js.Array(  js.Dynamic.literal(date = "24-Apr-07", close = 100),js.Dynamic.literal(date = "25-Apr-07", close = 200))
-    //val svg = d3.select("body").append("svg")
-    //val sel = svg.selectAll("#appl").data(matrix).enter()
 
     js.Dynamic.global.startDraw() //line chart init
     js.Dynamic.global.initialize() //gauge init
@@ -91,14 +86,14 @@ object Web extends js.JSApp {
         case Success(xhr) => {
           val msgPerSecondJson = js.JSON.parse(xhr.responseText.toString)
           val msgPerSecond = msgPerSecondJson.soldiers.msgPerSecond
-          //val failedPerSecond =  msgPerSecondJson.soldiers.failuresperSecond
+          val failedPerSecond =  msgPerSecondJson.soldiers.failureperSecond
           js.Dynamic.global.updateGauge("cpu",msgPerSecond)
-          //js.Dynamic.global.updateGauge("memory",failedPerSecond)
+          js.Dynamic.global.updateGauge("memory",failedPerSecond)
 
           //js.Dynamic.global.data.addRow(js.Array(counter.toString,msgPerSecond,200))
           counter = counter + 1
           js.Dynamic.global.data.addRow(js.Array(counter.toString,
-            msgPerSecond.asInstanceOf[Int],0)) //failedPerSecond.asInstanceOf[Int]
+            msgPerSecond.asInstanceOf[Int],failedPerSecond.asInstanceOf[Int]))
           js.Dynamic.global.startDraw()
 
         }
