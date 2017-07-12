@@ -18,7 +18,7 @@ import org.singlespaced.d3js.d3
 //Open index.html to view
 
 object Web extends js.JSApp {
-
+  var activeSoldiers = 0
   var teller = 100
   var mainPage = None
 
@@ -38,6 +38,7 @@ object Web extends js.JSApp {
 
   @js.native
   trait MyStruct extends js.Object {
+
     val host: String = js.native
     val port: Integer = js.native
     val typeAgent: String = js.native
@@ -69,10 +70,14 @@ object Web extends js.JSApp {
   }
 
   def increaseSoldiersButtonClick(): Unit = {
-
+    val url = "http://localhost:1335/numsoldiers/" + (activeSoldiers + 1).toString
+    val f = Ajax.post(url)
   }
   def decreaseSoldiersButtonClick(): Unit = {
-
+    if (activeSoldiers > 0) {
+      val url = "http://localhost:1335/numsoldiers/" + (activeSoldiers - 1).toString
+      val f = Ajax.post(url)
+    }
   }
 
   def warButtonClick(): Unit = {
@@ -98,13 +103,15 @@ object Web extends js.JSApp {
           val msgPerSecondJson = js.JSON.parse(xhr.responseText.toString)
           val msgPerSecond = msgPerSecondJson.soldiers.msgPerSecond
           val failedPerSecond =  msgPerSecondJson.soldiers.failureperSecond
+          val totalSoldiers = msgPerSecondJson.soldiers.totalSoldiers
+          activeSoldiers = totalSoldiers.asInstanceOf[Int]
           js.Dynamic.global.updateGauge("cpu",msgPerSecond)
           js.Dynamic.global.updateGauge("memory",failedPerSecond)
 
           //js.Dynamic.global.data.addRow(js.Array(counter.toString,msgPerSecond,200))
           counter = counter + 1
           js.Dynamic.global.data.addRow(js.Array(counter.toString,
-            msgPerSecond.asInstanceOf[Int],failedPerSecond.asInstanceOf[Int]))
+            msgPerSecond.asInstanceOf[Int],failedPerSecond.asInstanceOf[Int],totalSoldiers.asInstanceOf[Int]))
           js.Dynamic.global.startDraw()
 
         }

@@ -19,6 +19,6 @@ package io.armee.messages
 import io.armee.messages.LoadControllerMessages.{AgentStatus, NamedList}
 
 object ShellGateWayMessages {
-  case class SoldiersMetricsReply(msgPerSecond : Int,failuresperSecond: Int)
+  case class SoldiersMetricsReply(msgPerSecond : Int,failuresperSecond: Int,totalSoldiers: Int)
   case class ClusterStatusReply(status : NamedList[AgentStatus])
 }

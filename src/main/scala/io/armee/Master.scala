@@ -29,6 +29,7 @@ import akka.actor.ActorRef
 import io.armee.messages.LoadControllerMessages._
 import akka.pattern.ask
 import akka.util.Timeout
+import io.armee.messages.LoadSchedulerMessages.SendSoldiers
 import io.armee.messages.ShellGateWayMessages.{ClusterStatusReply, SoldiersMetricsReply}
 
 import scala.language.postfixOps
@@ -40,60 +41,78 @@ import scala.concurrent.duration._
 //curl http://<master-node>:<masterport>/clusterstatus eg http://localhost:1335/clusterstatus
 //curl -X POST --data 'Akka Http is Cool' http://<master-node>:1335/v1/id/ALICE
 class ApiServer(controller : ActorRef ) extends HttpApp with OrderJsonSupport {
-  def route =  {
-          //Resources like config file, images etc
-          pathPrefix("resources") {
-            path(".*".r) { x =>
-              get {
-                getFromResource( x)
-              }
-            }
-          }~ //The jars made by fastOptJS in sbt (used for scala.js
-          pathPrefix("target") {
-            path(".*".r) { x =>
-              get {
-                Files.exists(Paths.get("target/scala-2.11/" + x)) match {
-                  case true => getFromFile("target/scala-2.11/" + x)
-                  case _ => getFromFile("target/" + x)
-                }
-              }
-            }
-          }~ //The api's
-          path("clusterstatus") {
-            post {
-              implicit val timeout = Timeout(3 seconds)
-              val clusterStatus = controller ? ClusterStatus()
-              val result = Await.result(clusterStatus, timeout.duration).asInstanceOf[ClusterStatusReply]
-
-              complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, {
-                val lijst = result.status.items.collect { case x => x.toJson(agentWriter).toString }
-                """ { "agents" : [""" + lijst.mkString(",") + "] }"
-              })) //~
-              //post {
-              //  entity(as[String]) { entity =>
-              //    complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, s"<b>Thanks $id for posting your message <i>$entity</i></b>"))
-              //  }
-              //}
-            }
-          }~
-          path("soldiersmetrics") {
-            post {
-              implicit val timeout = Timeout(3 seconds)
-              val soldiersMetrics = controller ? SoldiersMetrics()
-              val result = Await.result(soldiersMetrics, timeout.duration).asInstanceOf[SoldiersMetricsReply]
-
-              complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, {
-                """{ "soldiers" : { "msgPerSecond" : """ + result.msgPerSecond.toJson.toString() +
-                  """ , "failureperSecond" : """ + result.failuresperSecond.toJson.toString() + "} }"
-              }))
-            }
-          }~ //Main app
-          path("") {
-            get {
-              getFromResource("index.html")
+  def route = {
+    //Resources like config file, images etc
+    pathPrefix("resources") {
+      path(".*".r) { x =>
+        get {
+          getFromResource(x)
+        }
+      }
+    } ~ //The jars made by fastOptJS in sbt (used for scala.js
+      pathPrefix("target") {
+        path(".*".r) { x =>
+          get {
+            Files.exists(Paths.get("target/scala-2.11/" + x)) match {
+              case true => getFromFile("target/scala-2.11/" + x)
+              case _ => getFromFile("target/" + x)
             }
           }
+        }
+      } ~
+      pathPrefix("numsoldiers") {
+        path(Segment) { num =>
+          post {
+            entity(as[String]) { entity =>
+              controller ! SendSoldiers(num.toInt)
+              complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, s"<b>num soldiers: $num , for posting your message <i>$entity</i></b>"))
+              }
+          //post {
+          //  //implicit val timeout = Timeout(3 seconds)
+          //  val soldiersMetrics = controller ! SendSoldiers(num.asInstanceOf[Int])
+          //  complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, {
+          //    """"{ "OK" }"""
+          //  }))
+
+          }
+        }
+      } ~ //The api's
+      path("clusterstatus") {
+        post {
+          implicit val timeout = Timeout(3 seconds)
+          val clusterStatus = controller ? ClusterStatus()
+          val result = Await.result(clusterStatus, timeout.duration).asInstanceOf[ClusterStatusReply]
+
+          complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, {
+            val lijst = result.status.items.collect { case x => x.toJson(agentWriter).toString }
+            """ { "agents" : [""" + lijst.mkString(",") + "] }"
+          })) //~
+          //post {
+          //  entity(as[String]) { entity =>
+          //    complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, s"<b>Thanks $id for posting your message <i>$entity</i></b>"))
+          //  }
+          //}
+        }
+      } ~
+      path("soldiersmetrics") {
+        post {
+          implicit val timeout = Timeout(3 seconds)
+          val soldiersMetrics = controller ? SoldiersMetrics()
+          val result = Await.result(soldiersMetrics, timeout.duration).asInstanceOf[SoldiersMetricsReply]
+
+          complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, {
+            """{ "soldiers" : { "msgPerSecond" : """ + result.msgPerSecond.toJson.toString() +
+              """ , "failureperSecond" : """ + result.failuresperSecond.toJson.toString() +
+              """ , "totalSoldiers" : """ + result.totalSoldiers.toJson.toString() + " } }"
+          }))
+        }
+      } ~ //Main app
+      path("") {
+        get {
+          getFromResource("index.html")
+        }
       }
+  }
 }
 
 object Master extends App {

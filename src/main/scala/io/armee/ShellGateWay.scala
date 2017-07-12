@@ -37,8 +37,8 @@ class ShellGateWay (shellPort: Int, masterPort: Int,masterServer: String) extend
       //println("User commands soldiers to initiate battle testing. Per executor: " + num)
       master ! SendSoldiers(num)
     }
-    case SoldiersMetricsReply(msgPerSecond,failuresperSecond) => {
-      println("Msg/s : " + msgPerSecond + ",failures: " + failuresperSecond)
+    case SoldiersMetricsReply(msgPerSecond,failuresperSecond,totalSoldiers) => {
+      println("Msg/s : " + msgPerSecond + ",failures: " + failuresperSecond + ", total soldiers: " + totalSoldiers)
     }
     case SoldiersMetrics() => master ! SoldiersMetrics()
     case ClusterStatus() => master ! ClusterStatus()

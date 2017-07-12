@@ -33,7 +33,7 @@ import scala.concurrent.duration._
 
 class LoadController(seedPort: Option[Int],seedHost: String,yamlConfig : YamlConfig) extends Actor with ActorLogging {
 
-  var sumTotalRequests,sumTotalFailures,msgPerSecond,failuresperSecond = 0 //for monitoring
+  var sumTotalRequests,sumTotalFailures,msgPerSecond,failuresperSecond,numWorkersPerExecutor,activeExecutors = 0 //for monitoring
   val configuredMasterPort : Int = yamlConfig.masterPort
   val configuredShellPort : Int = yamlConfig.shellPort
 
@@ -55,11 +55,11 @@ class LoadController(seedPort: Option[Int],seedHost: String,yamlConfig : YamlCon
 
     seedPort.foreach { _ =>
       //Each 5 seconds ask the monitor state to all executor monitors
-      context.system.scheduler.schedule(FiniteDuration(1, SECONDS), FiniteDuration(5, SECONDS)) {
+      context.system.scheduler.schedule(FiniteDuration(1, SECONDS), FiniteDuration(1, SECONDS)) {
         router.route(ControllerMonitorRequest(), self)
       }
       //And save the last state of the metrics received by the executor monitors
-      context.system.scheduler.schedule(FiniteDuration(1, SECONDS), FiniteDuration(5, SECONDS)) {
+      context.system.scheduler.schedule(FiniteDuration(1, SECONDS), FiniteDuration(1, SECONDS)) {
         //println("Msg/s (average 5 secs): " + sumTotalRequests + ",failures: " + sumTotalFailures)
         msgPerSecond = sumTotalRequests
         failuresperSecond = sumTotalFailures
@@ -76,12 +76,14 @@ class LoadController(seedPort: Option[Int],seedHost: String,yamlConfig : YamlCon
   def receive = {
     case MemberUp(member) =>
       log.info("Member is Up: {}", member.address)
+      activeExecutors = activeExecutors + 1
     case UnreachableMember(member) =>
       log.info("Member detected as unreachable: {}", member)
     case MemberRemoved(member, previousStatus) =>
       log.info(
         "Member is Removed: {} after {}",
         member.address, previousStatus)
+      activeExecutors = activeExecutors - 1
     case AddScheduler =>
       log.info("Adding LoadScheduler to LoadController: {}", sender().path)
       router = router.addRoutee(sender())
@@ -95,9 +97,12 @@ class LoadController(seedPort: Option[Int],seedHost: String,yamlConfig : YamlCon
       sumTotalFailures = sumTotalFailures + totalFailureRate
     case SendSoldiers(num) => {
       println("Master is sending soldiers to executors, total of " + num)
+      numWorkersPerExecutor = num
       router.route(SendSoldiers(num), self)
     } //Send to all executors
-    case SoldiersMetrics() => sender ! SoldiersMetricsReply(msgPerSecond,failuresperSecond)
+    case SoldiersMetrics() => {
+      sender ! SoldiersMetricsReply(msgPerSecond,failuresperSecond,numWorkersPerExecutor)
+    }
     case ClusterStatus() => {
       println("Cluster status requested at Controller")
       val members = cluster.state.members
