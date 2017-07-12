@@ -68,9 +68,20 @@ object Web extends js.JSApp {
 
   }
 
+  def increaseSoldiersButtonClick(): Unit = {
+
+  }
+  def decreaseSoldiersButtonClick(): Unit = {
+
+  }
+
   def warButtonClick(): Unit = {
     jQuery("#appl").html("<p>Preparing the master war room for battle testing....</p>")
-    jQuery("#appl").html("""<span id="memoryGaugeContainer"></span> <span id="cpuGaugeContainer"></span> <span id="networkGaugeContainer"></span> <span id="testGaugeContainer"></span>""")
+    jQuery("#appl").html(
+      """<span id="memoryGaugeContainer"></span> <span id="cpuGaugeContainer"></span><button height="42" width="42" id="max-button" type="button"><img height="42" width="42" src="./resources/plus.png"></button><button height="42" width="42" id="min-button" type="button" ><img height="42" width="42" src="./resources/minus.png"></button>""".stripMargin)
+
+    jQuery("#max-button").click(() => increaseSoldiersButtonClick())
+    jQuery("#min-button").click(() => decreaseSoldiersButtonClick())
 
     js.Dynamic.global.startDraw() //line chart init
     js.Dynamic.global.initialize() //gauge init

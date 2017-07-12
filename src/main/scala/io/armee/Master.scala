@@ -109,9 +109,7 @@ object Master extends App {
     ConfigValueFactory.fromAnyRef(e.masterPort)))
   val controller = system.actorOf(Props(new LoadController(Option(e.masterPort),e.masterServer,e )), "loadcontroller")
 
-  new ApiServer(controller).startServer(e.masterServer, e.apiPort, ServerSettings(ConfigFactory.load))
-
-  //val resourceHandler = system.actorOf(Props(new ResourceHandler(e.workerPort,"/tmp/output.json")), "filewriter_" + localIpAddress + "_" + uid)
-
+  new ApiServer(controller).startServer(e.masterServer, e.apiPort, ServerSettings(ConfigFactory.load().withValue("akka.remote.netty.tcp.port",
+    ConfigValueFactory.fromAnyRef(e.apiPort))))
 
 }
