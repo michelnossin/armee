@@ -26,6 +26,18 @@ import scalikejdbc._;
 class JdbcWriter(jdbcTarget : JdbcEventTarget) extends Actor with ActorLogging{
 
   //ConnectionPool.singleton("jdbc:mysql://localhost:3306/michel", "root", "michelnossin")
+  GlobalSettings.loggingSQLAndTime = LoggingSQLAndTimeSettings(
+    enabled = false,
+    singleLineMode = false,
+    printUnprocessedStackTrace = false,
+    stackTraceDepth= 15,
+    logLevel = 'error,
+    warningEnabled = false,
+    warningThresholdMillis = 3000L,
+    warningLogLevel = 'warn
+  )
+
+
   ConnectionPool.singleton(jdbcTarget.url,jdbcTarget.user,jdbcTarget.password)
 
   // ad-hoc session provider on the REPL

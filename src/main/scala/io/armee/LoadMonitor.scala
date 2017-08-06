@@ -54,8 +54,8 @@ class LoadMonitor(port : Int,seedPort: Option[Int]) extends Actor with ActorLogg
       eventGenerators ! MonitorRequests()
     }
     context.system.scheduler.schedule(FiniteDuration(1, SECONDS), FiniteDuration(1, SECONDS)) {
-      totalRequestRate = (deltaTotalRequests)/5
-      totalFailureRate = (deltaTotalFailures)/5
+      totalRequestRate = (deltaTotalRequests) //  /5
+      totalFailureRate = (deltaTotalFailures) //  /5
       //println("Msg per sec (avg last 5 sec):" + totalRequestRate + " , failed: " + totalFailureRate)
       deltaTotalRequests = 0
       deltaTotalFailures = 0

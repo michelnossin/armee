@@ -76,7 +76,8 @@ class LoadScheduler(workerHost: String,akkaPort: Int, seedPort: Option[Int], see
     broadCastRouter = Router(BroadcastRoutingLogic(), routees)
     roundRobinRouter = Router(RoundRobinRoutingLogic(), routees)
 
-    context.system.scheduler.schedule(FiniteDuration(1, SECONDS), FiniteDuration(10, NANOSECONDS)) {
+    context.system.scheduler.schedule(FiniteDuration(1, SECONDS), FiniteDuration(1, SECONDS)) {
+      //context.system.scheduler.schedule(FiniteDuration(1, SECONDS), FiniteDuration(10, NANOSECONDS)) {
       //roundRobinRouter.route(EventRequestEnvelope(JsonEventRequest()), self)
       broadCastRouter.route(EventRequestEnvelope(JsonEventRequest()), self)
     }

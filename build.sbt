@@ -44,6 +44,7 @@ assemblyMergeStrategy in assembly := {
 //For jdbc output we use scalalikejdbc
 libraryDependencies ++= Seq(
   "org.scalikejdbc" %% "scalikejdbc"       % "3.0.1",
+  //"org.scalikejdbc" %% "scalikejdbc-config" % "3.0.1",
   "com.h2database"  %  "h2"                % "1.4.196",
   "ch.qos.logback"  %  "logback-classic"   % "1.2.3"
 )

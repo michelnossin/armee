@@ -40,9 +40,9 @@ class EventGenerator(eventTarget : EventTarget) extends Actor with ActorLogging{
 
   def generateJson(replyTo : ActorRef): Unit = {
     val evr = eventRequestQueue.head
+    /*
     implicit val timeout = Timeout(5.seconds)
 
-    //replyTo ! JsonEvent("{ 'generatedAt':" +  System.currentTimeMillis / 1000 + ", 'id' : " + numRequests + " , 'username' : 'Michel' , 'role' : 'Data Engineer'")
     val future = replyTo ? WriteMessage("{ 'generatedAt':" +  System.currentTimeMillis / 1000 + ", 'id' : " + numRequests + " , 'username' : 'Michel' , 'role' : 'Data Engineer'}\n")
 
     val result = Await.result(future, timeout.duration).asInstanceOf[String]
@@ -51,7 +51,10 @@ class EventGenerator(eventTarget : EventTarget) extends Actor with ActorLogging{
         eventRequestQueue = eventRequestQueue.drop(1)
       }
     }
-    //eventRequestQueue = eventRequestQueue.drop(1)
+    */
+    replyTo ! WriteMessage("{ 'generatedAt':" +  System.currentTimeMillis / 1000 + ", 'id' : " + numRequests + " , 'username' : 'Michel' , 'role' : 'Data Engineer'}\n")
+    eventRequestQueue = eventRequestQueue.drop(1)
+
   }
 
   def receive = {
@@ -68,7 +71,7 @@ class EventGenerator(eventTarget : EventTarget) extends Actor with ActorLogging{
 
       //if (eventRequestQueue.isEmpty) {
       //Make bigger , example 1000 later on
-      if (eventRequestQueue.size < 2) {
+      if (eventRequestQueue.size < 100) {
         jr match {
           case JsonEventRequest() => {
             eventRequestQueue :+= jr
