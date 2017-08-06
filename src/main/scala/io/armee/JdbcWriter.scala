@@ -18,54 +18,36 @@ package io.armee
 
 import akka.actor.{Actor, ActorLogging}
 import akka.cluster.ClusterEvent.MemberEvent
-import io.armee.messages.EventGeneratorMessages.MonitorRequests
-import scalikejdbc.{AutoSession, ConnectionPool, WrappedResultSet}
-import scalikejdbc._
+import io.armee.messages.EventGeneratorMessages.{JdbcEventTarget, MonitorRequests}
+import io.armee.messages.WriterMessages.{ResetDatabase, WriteMessage}
+import io.armee.messages.WriterMessages.WriteMessage
+import scalikejdbc._;
 
-class JdbcWriter() extends Actor with ActorLogging{
+class JdbcWriter(jdbcTarget : JdbcEventTarget) extends Actor with ActorLogging{
 
-  ConnectionPool.singleton("jdbc:mysql://localhost:3306/michel", "root", "michelnossin")
+  //ConnectionPool.singleton("jdbc:mysql://localhost:3306/michel", "root", "michelnossin")
+  ConnectionPool.singleton(jdbcTarget.url,jdbcTarget.user,jdbcTarget.password)
 
   // ad-hoc session provider on the REPL
   implicit val session = AutoSession
 
-  // table creation, you can run DDL by using #execute as same as JDBC
-  sql"""
-drop table members
+  def receive = {
+    case MonitorRequests() => {}
+    case ResetDatabase() => {
+      sql"""
+drop table if exists armee
     """.execute.apply()
 
-  sql"""
-create table members (
-  id serial not null primary key,
-  name varchar(64),
+      sql"""
+create table armee (
+  message varchar(164),
   created_at timestamp not null
 )
 """.execute.apply()
-
-  // insert initial data
-  Seq("Alice", "Bob", "Chris") foreach { name =>
-    sql"insert into members (name, created_at) values (${name}, current_timestamp)".update.apply()
-  }
-
-  // for now, retrieves all data as Map value
-  val entities: List[Map[String, Any]] = sql"select * from members".map(_.toMap).list.apply()
-
-  // defines entity object and extractor
-  import org.joda.time._
-  case class Member(id: Long, name: Option[String], createdAt: DateTime)
-  object Member extends SQLSyntaxSupport[Member] {
-    override val tableName = "members"
-    def apply(rs: WrappedResultSet) = new Member(
-      rs.long("id"), rs.stringOpt("name"), rs.jodaDateTime("created_at"))
-  }
-
-  // find all members
-  val members: List[Member] = sql"select * from members".map(rs => Member(rs)).list.apply()
-
-
-  def receive = {
-    case MonitorRequests() => {}
-
+    }
+    case WriteMessage(message) => {
+      sql"insert into armee (message, created_at) values (${message}, current_timestamp)".update.apply()
+    }
     case _: MemberEvent => // ignore
   }
 

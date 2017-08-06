@@ -16,24 +16,42 @@
  */
 package io.armee
 
-import akka.actor.{Actor, ActorLogging, ActorRef}
+import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.cluster.ClusterEvent.MemberEvent
 import io.armee.messages.LoadSchedulerMessages.JsonEvent
-import io.armee.messages.EventGeneratorMessages.{EventRequest, EventRequestEnvelope, JsonEventRequest, MonitorRequests}
-import io.armee.messages.FileWriterMessages.WriteFileMessage
+import io.armee.messages.EventGeneratorMessages._
+import io.armee.messages.WriterMessages.WriteMessage
 import io.armee.messages.LoadMonitorMessages.MonitorRequestsReply
+import akka.pattern.ask
+import akka.util.Timeout
+import scala.concurrent.ExecutionContext.Implicits.global
 
+import scala.concurrent.duration._
 import scala.collection.immutable.Queue
+import scala.concurrent.Await
 
-class EventGenerator() extends Actor with ActorLogging{
+class EventGenerator(eventTarget : EventTarget) extends Actor with ActorLogging{
   var eventRequestQueue = Queue.empty[EventRequest]
   var numRequests,numFailures = 0 //for stats only, keeps increasing
 
+  //For now let's create a db session for each generator
+  val uid = java.util.UUID.randomUUID.toString
+  val jdbcWriter = context.system.actorOf(Props(new JdbcWriter(eventTarget.asInstanceOf[JdbcEventTarget])), "jdbcwriter_" + self.path.name + "_" + uid)
+
   def generateJson(replyTo : ActorRef): Unit = {
     val evr = eventRequestQueue.head
+    implicit val timeout = Timeout(5.seconds)
+
     //replyTo ! JsonEvent("{ 'generatedAt':" +  System.currentTimeMillis / 1000 + ", 'id' : " + numRequests + " , 'username' : 'Michel' , 'role' : 'Data Engineer'")
-    replyTo ! WriteFileMessage("{ 'generatedAt':" +  System.currentTimeMillis / 1000 + ", 'id' : " + numRequests + " , 'username' : 'Michel' , 'role' : 'Data Engineer'}\n")
-    eventRequestQueue = eventRequestQueue.drop(1)
+    val future = replyTo ? WriteMessage("{ 'generatedAt':" +  System.currentTimeMillis / 1000 + ", 'id' : " + numRequests + " , 'username' : 'Michel' , 'role' : 'Data Engineer'}\n")
+
+    val result = Await.result(future, timeout.duration).asInstanceOf[String]
+    future.onSuccess {
+      case result => {
+        eventRequestQueue = eventRequestQueue.drop(1)
+      }
+    }
+    //eventRequestQueue = eventRequestQueue.drop(1)
   }
 
   def receive = {
@@ -49,16 +67,20 @@ class EventGenerator() extends Actor with ActorLogging{
       numRequests = numRequests + 1
 
       //if (eventRequestQueue.isEmpty) {
-      if (eventRequestQueue.size < 1000) {
+      //Make bigger , example 1000 later on
+      if (eventRequestQueue.size < 2) {
         jr match {
           case JsonEventRequest() => {
             eventRequestQueue :+= jr
-            generateJson(self) //TODO: SOME OUTPUT ACTOR  
+            generateJson(jdbcWriter)
           }
           case _ => // ignore
         }
       }
-      else numFailures = numFailures + 1
+      else {
+        numFailures = numFailures + 1
+        generateJson(jdbcWriter) //Still we have to proces the request to make the queue smaller
+      }
       //}
 
     case _: MemberEvent => // ignore

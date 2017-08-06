@@ -16,13 +16,14 @@
  */
 package io.armee
 
-import akka.actor.{Actor, ActorLogging, Address, Props,ActorRef}
+import akka.actor.{Actor, ActorLogging, ActorRef, Address, Props}
 import akka.cluster.Cluster
 import akka.cluster.ClusterEvent._
 import akka.routing._
-import io.armee.messages.EventGeneratorMessages.{EventRequestEnvelope, JsonEventRequest}
+import io.armee.messages.EventGeneratorMessages.{EventRequestEnvelope, EventTarget, JdbcEventTarget, JsonEventRequest}
 import io.armee.messages.LoadControllerMessages.{AddScheduler, BroadcastedMessage, RemoveScheduler}
 import io.armee.messages.LoadSchedulerMessages.{JsonEvent, SendSoldiers}
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.collection.immutable
 import scala.concurrent.duration.{FiniteDuration, MICROSECONDS, NANOSECONDS, SECONDS}
@@ -39,6 +40,7 @@ class LoadScheduler(workerHost: String,akkaPort: Int, seedPort: Option[Int], see
 
   val uid = java.util.UUID.randomUUID.toString
   val monitor = context.system.actorOf(Props(new LoadMonitor(akkaPort,seedPort)), "loadmonitor_" + self.path.name + "_" + uid)
+  val jdbcTarget = JdbcEventTarget("jdbc:mysql://localhost:3306/michel", "root", "michelnossin")
 
   //Tell master to add new scheduler to akka cluster so the master can communicate with this worker node
   val remoteActor = seedPort map {
@@ -67,7 +69,7 @@ class LoadScheduler(workerHost: String,akkaPort: Int, seedPort: Option[Int], see
 
     val routees = Vector.fill(numSoldiers) {
       val uid = java.util.UUID.randomUUID.toString
-      val r = context.system.actorOf(Props(new EventGenerator()), "eventgenerator_" + self.path.name + "_" + uid)
+      val r = context.system.actorOf(Props(new EventGenerator(jdbcTarget)), "eventgenerator_" + self.path.name + "_" + uid)
       context watch r
       ActorRefRoutee(r)
     }

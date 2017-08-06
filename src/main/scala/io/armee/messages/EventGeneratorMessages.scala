@@ -22,10 +22,13 @@ import akka.dispatch.ControlMessage
 
 object EventGeneratorMessages {
   sealed trait EventRequest
+  sealed trait EventTarget
 
   case class JsonEventRequest() extends EventRequest
   //case class JsonEventRequest(replyTo : ActorRef) extends EventRequest
   case class XmlEventRequest() extends EventRequest
+
+  case class JdbcEventTarget(url : String, user: String, password: String) extends EventTarget
 
   case class EventRequestEnvelope(er: EventRequest)
 

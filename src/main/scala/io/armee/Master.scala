@@ -29,8 +29,10 @@ import akka.actor.ActorRef
 import io.armee.messages.LoadControllerMessages._
 import akka.pattern.ask
 import akka.util.Timeout
+import io.armee.messages.EventGeneratorMessages.JdbcEventTarget
 import io.armee.messages.LoadSchedulerMessages.SendSoldiers
 import io.armee.messages.ShellGateWayMessages.{ClusterStatusReply, SoldiersMetricsReply}
+import io.armee.messages.WriterMessages.ResetDatabase
 
 import scala.language.postfixOps
 import scala.concurrent.Await
@@ -115,6 +117,11 @@ object Master extends App {
   val system = ActorSystem("armee", ConfigFactory.load().withValue("akka.remote.netty.tcp.port",
     ConfigValueFactory.fromAnyRef(e.masterPort)))
   val controller = system.actorOf(Props(new LoadController(Option(e.masterPort),e.masterServer,e )), "loadcontroller")
+
+  //At this stage we only use Jdbc as a target. TODO: database config add in Yaml config file
+  val jdbcTarget = JdbcEventTarget("jdbc:mysql://localhost:3306/michel", "root", "michelnossin")
+  val jdbcWriter = system.actorOf(Props(new JdbcWriter(jdbcTarget.asInstanceOf[JdbcEventTarget])), "jdbcwriter_master")
+  jdbcWriter ! ResetDatabase()
 
   new ApiServer(controller).startServer(e.masterServer, e.apiPort, ServerSettings(ConfigFactory.load().withValue("akka.remote.netty.tcp.port",
     ConfigValueFactory.fromAnyRef(e.apiPort))))

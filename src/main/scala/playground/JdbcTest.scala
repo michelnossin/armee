@@ -15,18 +15,18 @@ dbconsole -e
   >
 sudo launchctl load -F /Library/LaunchDaemons/com.oracle.oss.mysql.mysqld.plist
 /usr/local/mysql/bin/mysql -u root -p
-SET PASSWORD FOR 'root'@'localhost' = PASSWORD('michelnossin');
+  SET PASSWORD FOR 'root'@'localhost' = PASSWORD('michelnossin');
 
-to test, first set connector driver in classpath :
-export CLASSPATH=/path/mysql-connector-java-ver-bin.jar:$CLASSPATH
-or java -cp <classpath>
-or Intellij -> file -> project structure -> libraries -> add the mysql-<version>.bin.jar path
+  to test, first set connector driver in classpath :
+    export CLASSPATH=/path/mysql-connector-java-ver-bin.jar:$CLASSPATH
+  or java -cp <classpath>
+  or Intellij -> file -> project structure -> libraries -> add the mysql-<version>.bin.jar path
 
-Run this application
-sudo launchctl unload -F /Library/LaunchDaemons/com.oracle.oss.mysql.mysqld.plist
- */
+    Run this application
+    sudo launchctl unload -F /Library/LaunchDaemons/com.oracle.oss.mysql.mysqld.plist
+    */
 
-object JdbcTest extends App{
+    object JdbcTest extends App{
 
   ConnectionPool.singleton("jdbc:mysql://localhost:3306/michel", "root", "michelnossin")
 
@@ -77,7 +77,7 @@ create table members (
 
   // find all members
   val members: List[Member] = sql"select * from members".map(rs => Member(rs)).list.apply()
-
+  members.foreach(x => print("x:" + x.toString))
   // use paste mode (:paste) on the Scala REPL
   //val m = Member.syntax("m")
   //val name = "Alice"

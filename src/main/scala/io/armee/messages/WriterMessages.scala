@@ -16,6 +16,7 @@
  */
 package io.armee.messages
 
-object FileWriterMessages {
-    case class WriteFileMessage(js: String)
+object WriterMessages {
+    case class WriteMessage(js: String)
+    case class ResetDatabase()
 }
